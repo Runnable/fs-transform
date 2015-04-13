@@ -25,10 +25,16 @@ transform('/path', [
   // Search and Replace in Files
   {
     action: 'replace',
-    rules: {
-      'search string': 'replacement',
-      'foo': 'bar'
-    },
+    rules: [
+      {
+        search: 'search string',
+        replace: 'replacement'
+      },
+      {
+        search: 'foo',
+        replace: 'bar'
+      }
+    ],
     exclude: {
       'search string': [
         {

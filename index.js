@@ -164,5 +164,42 @@ Transformer.prototype.name = function (rule, cb) {
  *   been performed.
  */
 Transformer.prototype.replace = function (rule, cb) {
-  // TODO Implement me.
+  var rules = rule.rules || [];
+  var exclude = rules.exclude || {};
+  async.each(rule, function (rule, ruleCallback) {
+    var command = ['grep -rn', rule.search, repoDir].join(' ');
+    var search = rule.search.replace(/\//, '\\/');
+    var replace = rule.search.replace(/\//, '\\/');
+
+    childProcess.exec(command, function (err, result) {
+      var files = [];
+
+      // 1. Determine files & lines from grep
+      result.split('\n').forEach(function (line) {
+        var match = line.match(/(.*):(\d+):.*/);
+        if (match) {
+          files.push({ name: match[1], line: match[2] });
+        }
+      });
+
+      // 2. Remove excluded files/lines from result set
+      files = files.filter(function (file) {
+        return exclude[rule.search].reduce(function (memo, curr, index) {
+          if (curr.line) {
+            return file.name != curr.file && file.line != curr.line;
+          }
+          return file.name != curr.file;
+        }, true);
+      });
+
+      // 3. Apply in-place `sed` to result set
+      //    sed -i "" -e "${line}s/${search}/${replace}/" ${file}
+      async.each(files, function (file, cb) {
+        var command = 'sed -i "' +
+          file.line + 's/' + search + '/' + replace + '/g" ' +
+          file.name;
+        childProcess.exec(command, cb);
+      }, ruleCallback);
+    });
+  }, cb);
 };
