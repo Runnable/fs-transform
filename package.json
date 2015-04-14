@@ -6,6 +6,10 @@
   "scripts": {
     "test": "jshint index.js && lab -v -c test/*"
   },
+  "jshintConfig": {
+    "node": true,
+    "curly": true
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/rsandor/fs-transform.git"
@@ -32,6 +36,7 @@
     "code": "^1.4.0",
     "jsdoc": "^3.3.0-beta3",
     "jshint": "^2.6.3",
-    "lab": "^5.5.1"
+    "lab": "^5.5.1",
+    "sinon": "^1.14.1"
   }
 }
