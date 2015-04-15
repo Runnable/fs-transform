@@ -11,6 +11,7 @@ var expect = Code.expect;
 var sinon = require('sinon');
 var childProcess = require('child_process');
 var FsDriver = require('../lib/fs-driver');
+var fs = require('fs');
 
 describe('fs-driver', function () {
   describe('interface', function() {
@@ -44,25 +45,25 @@ describe('fs-driver', function () {
     });
   });
 
-  describe('_absolutePath', function () {
+  describe('absolutePath', function () {
     var driver = new FsDriver('/tmp');
 
     it('should return an absolute path for a relative path', function (done) {
-      expect(driver._absolutePath('foo.txt'))
+      expect(driver.absolutePath('foo.txt'))
         .to.equal('/tmp/foo.txt');
-      expect(driver._absolutePath('./../neat.txt'))
+      expect(driver.absolutePath('./../neat.txt'))
         .to.equal('/tmp/./../neat.txt');
       done();
     });
 
     it('should return the same path for an absolute path', function (done) {
-      expect(driver._absolutePath('/this/path'))
+      expect(driver.absolutePath('/this/path'))
         .to.equal('/this/path');
-      expect(driver._absolutePath('/etc/init.d/../foo'))
+      expect(driver.absolutePath('/etc/init.d/../foo'))
         .to.equal('/etc/init.d/../foo');
       done();
     });
-  }); // end '_absolutePath'
+  }); // end 'absolutePath'
 
   describe('file system', function () {
     var driver = new FsDriver('/tmp');
@@ -180,5 +181,26 @@ describe('fs-driver', function () {
         });
       });
     }); // end 'sed'
+
+    describe('exists', function() {
+      it('should use `fs.existsSync` to perform the check', function(done) {
+        var stub = sinon.stub(fs, 'existsSync');
+        driver.exists('example');
+        expect(stub.calledOnce);
+        expect(stub.calledWith('/tmp/example'));
+        fs.existsSync.restore();
+        done();
+      });
+
+      it('should return the result of `fs.existsSync`', function (done) {
+        var stub = sinon.stub(fs, 'existsSync')
+          .withArgs('/tmp/example').returns(true)
+          .withArgs('/full/path').returns(false);
+        expect(driver.exists('example')).to.be.true();
+        expect(driver.exists('/full/path')).to.be.false();
+        fs.existsSync.restore();
+        done();
+      });
+    });
   }); // end 'file system'
 }); // end 'fs-driver'

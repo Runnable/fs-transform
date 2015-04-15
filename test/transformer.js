@@ -91,6 +91,15 @@ describe('Transformer', function() {
         done();
       })
     });
+
+    it('should supply the transformer as the second parameter to the callback', function (done) {
+      var transformer = new Transformer('/etc', []);
+      transformer.execute(function (err, t) {
+        if (err) { return done(err); }
+        expect(t).to.equal(transformer);
+        done();
+      });
+    });
   }); // end 'execute'
 
   describe('setAction & getAction', function() {
@@ -199,32 +208,89 @@ describe('Transformer', function() {
 
   describe('copy', function() {
     var transformer;
-    before(function (done) {
+    beforeEach(function (done) {
       transformer = new Transformer('/etc', []);
+      sinon.stub(transformer.driver, 'copy').yields();
       done();
     });
 
-    it('should yield an error if the rule was not given with a `source`', function(done) {
-      transformer.copy({ action: 'copy', dest: 'bar' }, function (err) {
-        expect(err).to.exist();
+    afterEach(function (done) {
+      transformer.driver.copy.restore();
+      done();
+    });
+
+    it('should add a warning and skip if the rule was not given with a `source`', function(done) {
+      var rule = { action: 'copy', dest: 'bar' };
+      transformer.copy(rule, function (err) {
+        if (err) { return done(err); }
+        expect(transformer.warnings.length).to.equal(1);
+        var warning = transformer.warnings[0];
+        expect(warning.rule).to.equal(rule);
+        expect(warning.message).to.equal('Missing source file.');
+        expect(transformer.driver.copy.callCount).to.equal(0);
         done();
       });
     });
 
-    it('should yield an error if the rule was not given with a `dest`', function(done) {
-      transformer.copy({ action: 'copy', source: 'foo' }, function (err) {
-        expect(err).to.exist();
+    it('should add a warning and skip if the rule was not given with a `dest`', function(done) {
+      var rule = { action: 'copy', source: 'foo' };
+      transformer.copy(rule, function (err) {
+        if (err) { return done(err); }
+        expect(transformer.warnings.length).to.equal(1);
+        var warning = transformer.warnings[0];
+        expect(warning.rule).to.equal(rule);
+        expect(warning.message).to.equal('Missing destination file.');
+        expect(transformer.driver.copy.callCount).to.equal(0);
+        done();
+      });
+    });
+
+    it('should add a warning and skip if the source file does not exist', function(done) {
+      var rule = { action: 'copy', source: 'foo', dest: 'bar'};
+      sinon.stub(transformer.driver, 'exists')
+        .withArgs('foo').returns(false);
+
+      transformer.copy(rule, function (err) {
+        if (err) { return done(err); }
+        expect(transformer.warnings.length).to.equal(1);
+        var warning = transformer.warnings[0];
+        expect(warning.rule).to.equal(rule);
+        expect(warning.message).to.equal('Source file does not exist.');
+        expect(transformer.driver.copy.callCount).to.equal(0);
         done();
       });
     });
 
     it('should use the driver copy method', function (done) {
       var rule = { action: 'copy', source: 'foo', dest: 'bar'};
-      var stub = sinon.stub(transformer.driver, 'copy').yields();
+
+      sinon.stub(transformer.driver, 'exists')
+        .withArgs('foo').returns(true)
+        .withArgs('bar').returns(false);
+
       transformer.copy(rule, function (err) {
         if (err) { return done(err); }
+        var stub = transformer.driver.copy;
         expect(stub.calledOnce).to.be.true();
         expect(stub.calledWith(rule.source, rule.dest)).to.be.true();
+        transformer.driver.exists.restore();
+        done();
+      });
+    });
+
+    it('it should add a warning if overwriting the destination file', function (done) {
+      var rule = { action: 'copy', source: 'foo', dest: 'bar'};
+      sinon.stub(transformer.driver, 'exists').returns(true);
+      transformer.copy(rule, function (err) {
+        if (err) { return done(err); }
+        var stub = transformer.driver.copy;
+        expect(stub.calledOnce).to.be.true();
+        expect(stub.calledWith(rule.source, rule.dest)).to.be.true();
+        expect(transformer.warnings.length).to.equal(1);
+        var warning = transformer.warnings[0];
+        expect(warning.rule).to.equal(rule);
+        expect(warning.message).to.equal('Overwriting destination file.');
+        transformer.driver.exists.restore();
         done();
       });
     });
@@ -232,32 +298,89 @@ describe('Transformer', function() {
 
   describe('rename', function() {
     var transformer;
-    before(function (done) {
+    beforeEach(function (done) {
       transformer = new Transformer('/etc', []);
+      sinon.stub(transformer.driver, 'move').yields();
       done();
     });
 
-    it('should yield an error if the rule was not given with a `source`', function(done) {
-      transformer.rename({ action: 'rename', dest: 'bar' }, function (err) {
-        expect(err).to.exist();
+    afterEach(function (done) {
+      transformer.driver.move.restore();
+      done();
+    });
+
+    it('should add a warning and skip if the rule was not given with a `source`', function(done) {
+      var rule = { action: 'rename', dest: 'bar' };
+      transformer.rename(rule, function (err) {
+        if (err) { return done(err); }
+        expect(transformer.warnings.length).to.equal(1);
+        var warning = transformer.warnings[0];
+        expect(warning.rule).to.equal(rule);
+        expect(warning.message).to.equal('Missing source file.');
+        expect(transformer.driver.move.callCount).to.equal(0);
         done();
       });
     });
 
-    it('should yield an error if the rule was not given with a `dest`', function(done) {
-      transformer.rename({ action: 'rename', source: 'foo' }, function (err) {
-        expect(err).to.exist();
+    it('should add a warning and skip if the rule was not given with a `dest`', function(done) {
+      var rule = { action: 'rename', source: 'foo' };
+      transformer.rename(rule, function (err) {
+        if (err) { return done(err); }
+        expect(transformer.warnings.length).to.equal(1);
+        var warning = transformer.warnings[0];
+        expect(warning.rule).to.equal(rule);
+        expect(warning.message).to.equal('Missing destination file.');
+        expect(transformer.driver.move.callCount).to.equal(0);
+        done();
+      });
+    });
+
+    it('should add a warning and skip if the source file does not exist', function(done) {
+      var rule = { action: 'rename', source: 'foo', dest: 'bar'};
+      sinon.stub(transformer.driver, 'exists')
+        .withArgs('foo').returns(false);
+
+      transformer.rename(rule, function (err) {
+        if (err) { return done(err); }
+        expect(transformer.warnings.length).to.equal(1);
+        var warning = transformer.warnings[0];
+        expect(warning.rule).to.equal(rule);
+        expect(warning.message).to.equal('Source file does not exist.');
+        expect(transformer.driver.move.callCount).to.equal(0);
         done();
       });
     });
 
     it('should use the driver move method', function (done) {
       var rule = { action: 'rename', source: 'foo', dest: 'bar'};
-      var stub = sinon.stub(transformer.driver, 'move').yields();
+
+      sinon.stub(transformer.driver, 'exists')
+        .withArgs('foo').returns(true)
+        .withArgs('bar').returns(false);
+
       transformer.rename(rule, function (err) {
         if (err) { return done(err); }
+        var stub = transformer.driver.move;
         expect(stub.calledOnce).to.be.true();
         expect(stub.calledWith(rule.source, rule.dest)).to.be.true();
+        transformer.driver.exists.restore();
+        done();
+      });
+    });
+
+    it('it should add a warning if overwriting the destination file', function (done) {
+      var rule = { action: 'rename', source: 'foo', dest: 'bar'};
+      sinon.stub(transformer.driver, 'exists').returns(true);
+      transformer.rename(rule, function (err) {
+        if (err) { return done(err); }
+        var stub = transformer.driver.move;
+        expect(stub.calledOnce).to.be.true();
+        expect(stub.calledWith(rule.source, rule.dest)).to.be.true();
+        expect(transformer.warnings.length).to.equal(1);
+        var warning = transformer.warnings[0];
+        expect(warning.rule).to.equal(rule);
+        expect(warning.message).to.equal('Overwriting destination file.');
+        transformer.driver.exists.restore();
         done();
       });
     });
