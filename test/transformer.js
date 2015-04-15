@@ -394,68 +394,105 @@ describe('Transformer', function() {
       done();
     });
 
-    describe('patterns', function() {
-      beforeEach(function (done) {
-        sinon.stub(async, 'each').callsArg(2);
+    it('should add a warning and do nothing if not given a search pattern', function(done) {
+      var grepSpy = sinon.spy(transformer.driver, 'grep');
+      var sedSpy = sinon.spy(transformer.driver, 'sed');
+      var rule = {};
+      transformer.replace(rule, function (err) {
+        expect(grepSpy.callCount).to.equal(0);
+        expect(sedSpy.callCount).to.equal(0);
+        expect(transformer.warnings.length).to.equal(1);
+        var warning = transformer.warnings[0];
+        expect(warning.rule).to.equal(rule);
+        expect(warning.message).to.equal('Search pattern not specified.');
         done();
       });
+    });
 
-      afterEach(function (done) {
-        async.each.restore();
+    it('should add a warning and do nothing if no replacement was given', function(done) {
+      var grepSpy = sinon.spy(transformer.driver, 'grep');
+      var sedSpy = sinon.spy(transformer.driver, 'sed');
+      var rule = { search: 'a' };
+      transformer.replace(rule, function (err) {
+        expect(grepSpy.callCount).to.equal(0);
+        expect(sedSpy.callCount).to.equal(0);
+        expect(transformer.warnings.length).to.equal(1);
+        var warning = transformer.warnings[0];
+        expect(warning.rule).to.equal(rule);
+        expect(warning.message).to.equal('Replacement not specified.');
         done();
       });
+    });
 
-      it('should use [] for patterns if non were provided', function(done) {
-        transformer.replace({}, noop);
-        var arg = async.each.firstCall.args[0];
-        expect(Array.isArray(arg)).to.be.true();
-        expect(arg.length).to.equal(0);
-        done();
-      });
-
-      it('should perform search and replace for each pattern', function(done) {
-        var rule = { patterns: [1, 2, 3] };
-        var callback = sinon.spy();
-        transformer.replace(rule, callback);
-        expect(async.each.calledOnce).to.be.true();
-        expect(async.each.calledWith(rule.patterns)).to.be.true();
-        expect(callback.calledOnce).to.be.true();
-        done();
-      });
-    }); // end 'sub-rules'
-
-    it('should perform a grep for each search and replace', function(done) {
+    it('should add a warning if excludes is not an array', function(done) {
       var rule = {
-        patterns: [
-          { search: 'a' },
-          { search: 'b' },
-          { search: 'c' }
-        ]
+        search: 'a',
+        replace: 'b',
+        exclude: 1776
       };
-      var count = createCount(3, function () {
-        expect(stub.callCount).to.equal(3);
-        rule.patterns.forEach(function (pattern) {
-          expect(stub.calledWith(pattern.search)).to.be.true();
-        });
+      sinon.stub(transformer.driver, 'grep', function() {
+        expect(transformer.warnings.length).to.equal(1);
+        var warning = transformer.warnings[0];
+        expect(warning.rule).to.equal(rule);
+        expect(warning.message)
+          .to.equal('Excludes not supplied as an array, omitting.');
         done();
       });
-      var stub = sinon.stub(transformer.driver, 'grep', function() {
-        count.next();
-      });
+
       transformer.replace(rule);
+    });
+
+    it('should add a warning and do nothing if no files match the pattern', function(done) {
+      var rule = {
+        search: 'a',
+        replace: 'b'
+      };
+
+      var spy = sinon.spy(transformer.driver, 'sed');
+      sinon.stub(transformer.driver, 'grep').yields(null, '');
+
+      transformer.replace(rule, function (err) {
+        if (err) { return done(err); }
+        expect(transformer.warnings.length).to.equal(1);
+        var warning = transformer.warnings[0];
+        expect(warning.rule).to.equal(rule);
+        expect(warning.message)
+          .to.equal('Search did not return any results.');
+        expect(spy.callCount).to.equal(0);
+        done();
+      })
+    });
+
+    it('should perform a grep for the search and replace', function(done) {
+      var rule = {
+        action: 'replace',
+        search: 'a',
+        replace: 'b'
+      };
+      var stub = sinon.stub(transformer.driver, 'grep', function() {
+        expect(stub.calledOnce).to.be.true();
+        expect(stub.calledWith(rule.search)).to.be.true();
+        transformer.driver.grep.restore();
+        done();
+      });
+      transformer.replace(rule, noop);
     });
 
     it('should call sed on each file in the result set', function(done) {
       var rule = {
-        patterns: [
-          { search: 'a', replace: 'b' }
-        ]
+        action: 'replace',
+        search: 'a',
+        replace: 'b'
       };
-      var grepResult = 'file1.txt:12:---\nfile2.txt:293:---\n';
-      sinon.stub(transformer.driver, 'grep').yields(null, grepResult);
-      var sed = sinon.stub(transformer.driver, 'sed').callsArg(4);
+
+      var sed = sinon.stub(transformer.driver, 'sed').yields();
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        'file1.txt:12:---',
+        'file2.txt:293:---'
+      ].join('\n'));
 
       transformer.replace(rule, function (err) {
+        if (err) { return done(err); }
         expect(sed.callCount).to.equal(2);
         expect(sed.calledWith('a', 'b', 'file1.txt', 12));
         expect(sed.calledWith('a', 'b', 'file2.txt', 293));
@@ -464,10 +501,17 @@ describe('Transformer', function() {
     });
 
     it('should ignore binary files', function(done) {
-      var rule = { patterns: [{search: 'a', replace: 'b'}] };
-      var grepResult = 'Binary file example.bin matches\nfile1:342:---\n';
-      sinon.stub(transformer.driver, 'grep').yields(null, grepResult);
-      var sed = sinon.stub(transformer.driver, 'sed').callsArg(4);
+      var rule = {
+        search: 'a',
+        replace: 'b'
+      };
+
+      var sed = sinon.stub(transformer.driver, 'sed').yields();
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        'Binary file example.bin matches',
+        'file1:342:---'
+      ].join('\n'));
+
       transformer.replace(rule, function (err) {
         expect(sed.callCount).to.equal(1);
         expect(sed.calledWith('a', 'b', 'file1.txt', 342));
@@ -477,27 +521,23 @@ describe('Transformer', function() {
 
     it('should appropriately apply exclude filters', function(done) {
       var rule = {
-        patterns: [
-          {
-            search: 'a',
-            replace: 'b',
-            exclude: [
-              { name: 'file1.txt' },
-              { name: 'file2.txt', line: 22 },
-              { name: 'not-there.txt' },
-              { } // malformed excludes should be ignored
-            ]
-          }
+        search: 'a',
+        replace: 'b',
+        exclude: [
+          { name: 'file1.txt' },
+          { name: 'file2.txt', line: 22 },
+          { name: 'not-there.txt' },
+          { } // malformed excludes should be ignored
         ]
       };
-      var grepResult = [
+
+      var sed = sinon.stub(transformer.driver, 'sed').yields();
+      sinon.stub(transformer.driver, 'grep').yields(null, [
         'file1.txt:23:---',
         'file2.txt:22:---',
         'file2.txt:78:---',
         'file3.txt:182:---'
-      ].join('\n');
-      sinon.stub(transformer.driver, 'grep').yields(null, grepResult);
-      var sed = sinon.stub(transformer.driver, 'sed').callsArg(4);
+      ].join('\n'));
 
       transformer.replace(rule, function (err) {
         expect(sed.callCount).to.equal(2);
@@ -505,6 +545,64 @@ describe('Transformer', function() {
         expect(sed.calledWith('a', 'b', 'file3.txt', 29));
         done();
       });
+    });
+
+    it('should add a warning for every exclude that was not applied', function(done) {
+      var rule = {
+        search: 'a',
+        replace: 'b',
+        exclude: [
+          { name: 'applied.txt' },
+          { name: 'not-applied.txt' },
+          { name: 'file1.txt', line: 50 }, // applied
+          { name: 'file1.txt', line: 17 }  // not applied
+        ]
+      };
+
+      var sed = sinon.stub(transformer.driver, 'sed').yields();
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        'applied.txt:111:---',
+        'okay.txt:2384:---',
+        'file1.txt:50:---'
+      ].join('\n'));
+
+      transformer.replace(rule, function (err) {
+        if (err) { return done(err); }
+        var warnings = transformer.warnings;
+        expect(warnings.length).to.equal(2);
+        expect(warnings[0].rule).to.equal(rule.exclude[1]);
+        expect(warnings[0].message).to.equal('Unused exclude.')
+        expect(warnings[1].rule).to.equal(rule.exclude[3]);
+        expect(warnings[1].message).to.equal('Unused exclude.')
+        done();
+      });
+    });
+
+    it('should add a warning and skip if all results were excluded', function(done) {
+      var rule = {
+        search: 'a',
+        replace: 'b',
+        exclude: [
+          { name: 'file1.txt' }
+        ]
+      };
+
+      var sed = sinon.stub(transformer.driver, 'sed').yields();
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        'file1.txt:50:---',
+        'file1.txt:89:---',
+        'file1.txt:123:---'
+      ].join('\n'));
+
+      transformer.replace(rule, function (err) {
+        if (err) { return done(err); }
+        var warnings = transformer.warnings;
+        expect(warnings.length).to.equal(1);
+        expect(warnings[0].rule).to.equal(rule);
+        expect(warnings[0].message).to.equal('All results were excluded.');
+        expect(sed.callCount).to.equal(0);
+        done();
+      })
     });
   }); // end 'replace'
 }); // end 'Transformer'
