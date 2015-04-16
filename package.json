@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/rsandor/fs-transform.git"
+    "url": "https://github.com/Runnable/fs-transform.git"
   },
   "keywords": [
     "file",
@@ -26,7 +26,7 @@
   "author": "Ryan Sandor Richards <ryan@runnable.com> (http://www.runnable.com)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rsandor/fs-transform/issues"
+    "url": "https://github.com/Runnable/fs-transform/issues"
   },
   "homepage": "https://github.com/rsandor/fs-transform",
   "dependencies": {
