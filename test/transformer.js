@@ -122,6 +122,30 @@ describe('Transformer', function() {
     });
   }); // end 'setAction & getAction'
 
+  describe('getScript', function() {
+    it('should return a correctly composed shellscript', function(done) {
+      var ruleOne = { action: 'copy', source: 'foo', dest: 'bar' };
+      var commandOne = 'cp /etc/foo /etc/bar';
+      var ruleTwo = { action: 'replace', search: 'a', replace: 'b' };
+      var commandTwo = 'sed -i "" "22s/a/b/g" bar';
+
+      var transformer = new Transformer('/etc', []);
+      transformer.saveCommand(commandOne, ruleOne);
+      transformer.saveCommand(commandTwo, ruleTwo);
+
+      var script = transformer.getScript();
+
+      expect(script).to.be.a.string();
+      expect(script.indexOf('#!/bin/sh')).to.equal(0);
+      expect(script.indexOf(commandOne)).to.be.above(-1);
+      expect(script.indexOf(commandTwo)).to.be.above(-1);
+      expect(script.indexOf(JSON.stringify(ruleOne))).to.be.above(-1);
+      expect(script.indexOf(JSON.stringify(ruleTwo))).to.be.above(-1);
+
+      done();
+    });
+  });
+
   describe('applyRule', function() {
     var transformer;
 
@@ -294,6 +318,14 @@ describe('Transformer', function() {
         done();
       });
     });
+
+    it('should save the copy command', function(done) {
+      var rule = { source: 'foo', dest: 'bar' };
+      var spy = sinon.spy(transformer, 'saveCommand');
+      transformer.copy(rule, noop);
+      expect(spy.calledOnce);
+      done();
+    });
   }); // end 'copy'
 
   describe('rename', function() {
@@ -383,6 +415,14 @@ describe('Transformer', function() {
         transformer.driver.exists.restore();
         done();
       });
+    });
+
+    it('should save the move command', function(done) {
+      var rule = { source: 'foo', dest: 'bar' };
+      var spy = sinon.spy(transformer, 'saveCommand');
+      transformer.rename(rule, noop);
+      expect(spy.calledOnce);
+      done();
     });
   }); // end 'rename'
 
@@ -602,7 +642,54 @@ describe('Transformer', function() {
         expect(warnings[0].message).to.equal('All results were excluded.');
         expect(sed.callCount).to.equal(0);
         done();
-      })
+      });
+    });
+
+    it('should save each sed command', function(done) {
+      var rule = {
+        action: 'replace',
+        search: 'alpha',
+        replace: 'beta'
+      };
+      var command = 'sed -i "" "s/alpha/beta/" file.txt';
+      var spy = sinon.spy(transformer, 'saveCommand');
+      var sed = sinon.stub(transformer.driver, 'sed').returns(command).yields();
+
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        'file.txt:10:---',
+        'file.txt:12:---',
+        'file.txt:14:---'
+      ].join('\n'))
+
+      transformer.replace(rule, function () {
+        expect(spy.callCount).to.equal(3);
+        expect(spy.calledWith(command));
+        done();
+      });
+    });
+
+    it('should not save a command if an error occurred', function(done) {
+      var rule = {
+        action: 'replace',
+        search: 'alpha',
+        replace: 'beta'
+      };
+
+      var spy = sinon.spy(transformer, 'saveCommand');
+      var sed = sinon.stub(transformer.driver, 'sed')
+        .returns('command')
+        .yields(new Error('Error'));
+
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        'file.txt:10:---',
+        'file.txt:12:---',
+        'file.txt:14:---'
+      ].join('\n'))
+
+      transformer.replace(rule, function () {
+        expect(spy.callCount).to.equal(0);
+        done();
+      });
     });
   }); // end 'replace'
 }); // end 'Transformer'

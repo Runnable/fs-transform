@@ -12,6 +12,7 @@ var sinon = require('sinon');
 var childProcess = require('child_process');
 var FsDriver = require('../lib/fs-driver');
 var fs = require('fs');
+var noop = require('101/noop');
 
 describe('fs-driver', function () {
   describe('interface', function() {
@@ -79,6 +80,12 @@ describe('fs-driver', function () {
     });
 
     describe('move', function() {
+      it('should return the move command', function(done) {
+        var command = "mv /tmp/foo /tmp/bar";
+        expect(driver.move('foo', 'bar', noop)).to.equal(command);
+        done();
+      });
+      
       it('should execute system `mv` when moving a file', function (done) {
         var source = 'a.txt';
         var dest = 'b.txt';
@@ -101,6 +108,12 @@ describe('fs-driver', function () {
     }); // end 'move'
 
     describe('copy', function() {
+      it('should return the copy command', function(done) {
+        var command = "cp /tmp/foo /tmp/bar";
+        expect(driver.copy('foo', 'bar', noop)).to.equal(command);
+        done();
+      });
+
       it('should execute system `cp` when copying a file', function (done) {
         var source = 'a.txt';
         var dest = 'b.txt';
@@ -123,6 +136,12 @@ describe('fs-driver', function () {
     }); // end 'copy'
 
     describe('grep', function() {
+      it('should return the grep command', function(done) {
+        var command = 'grep -rn search /tmp';
+        expect(driver.grep('search', noop)).to.equal(command);
+        done();
+      });
+
       it('should execute system `grep`', function (done) {
         driver.grep('foo', function (err) {
           if (err) { return done(err); }
@@ -153,6 +172,13 @@ describe('fs-driver', function () {
     }); // end 'grep'
 
     describe('sed', function() {
+      it('should return the correct sed command', function(done) {
+        var command = 'sed -i "" "1337s/bar/baz/g" /tmp/file1.txt';
+        expect(driver.sed('bar', 'baz', 'file1.txt', 1337, noop))
+          .to.equal(command);
+        done();
+      });
+
       it('should execute system `sed`', function(done) {
         driver.sed('foo', 'bar', 'example.txt', 20, function (err) {
           if (err) { return done(err); }
