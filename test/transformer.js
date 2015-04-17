@@ -313,7 +313,7 @@ describe('Transformer', function() {
         expect(transformer.warnings.length).to.equal(1);
         var warning = transformer.warnings[0];
         expect(warning.rule).to.equal(rule);
-        expect(warning.message).to.equal('Overwriting destination file.');
+        expect(warning.message).to.equal('Overwrites destination file.');
         transformer.driver.exists.restore();
         done();
       });
@@ -411,7 +411,7 @@ describe('Transformer', function() {
         expect(transformer.warnings.length).to.equal(1);
         var warning = transformer.warnings[0];
         expect(warning.rule).to.equal(rule);
-        expect(warning.message).to.equal('Overwriting destination file.');
+        expect(warning.message).to.equal('Overwrites destination file.');
         transformer.driver.exists.restore();
         done();
       });
