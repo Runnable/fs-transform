@@ -141,6 +141,47 @@ warnings. The warnings, in order of precedence, are:
   all of the files from the search results.
 
 
+## Generating Shell Scripts
+`fs-transform` also has the ability to generate reusable shell scripts. Whenever
+a command that would mutate the state of the root directory executes
+successfully, the `Transform` class will keep track of that command and which
+rule generated it (via the `.saveCommand` method).
+
+Once the transformation is complete, you can call the `.getScript` method to
+get all the commands as an executable shell script. Here's an example:
+
+```js
+var rules = [
+  { action: 'copy', source: 'foo', dest: 'bar' },
+  { action: 'replace', search: 'Socrates', replace: 'Plato' }
+]
+Transformer.transform('/tmp', rules, function (err, transformer) {
+  // Get the shell script:
+  var script = transformer.getScript();
+});
+```
+
+The script would look something like this:
+```sh
+#!/bin/sh
+
+#
+# Warning: this is a generated file, modifications may be overwritten.
+#
+
+# from rule: {action:"copy",source:"foo",dest:"bar"}
+cp /tmp/foo /tmp/bar
+
+# from rule: {action:"replace",search:"Socrates",replace:"Plato"}
+sed -i "" "13s/Socrates/Plato/g" /tmp/bar
+
+# from rule: {action:"replace",search:"Socrates",replace:"Plato"}
+sed -i "" "93s/Socrates/Plato/g" /tmp/bar
+
+# from rule: {action:"replace",search:"Socrates",replace:"Plato"}
+sed -i "" "4761s/Socrates/Plato/g" /tmp/bar
+```
+
 ## Contributing
 
 If you'd like to contribute to the library please abide by the following rules:
