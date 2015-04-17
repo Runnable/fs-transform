@@ -4,6 +4,8 @@
 ![Dependency Status](https://david-dm.org/Runnable/fs-transform.svg)
 ![devDependency Status](https://david-dm.org/Runnable/fs-transform/dev-status.svg)
 
+[![NPM](https://nodei.co/npm/fs-transform.png?compact=true)](https://nodei.co/npm/fs-transform)
+
 Fast, rule based, file system transformations.
 
 ## Basic Usage
