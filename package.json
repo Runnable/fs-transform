@@ -1,0 +1,44 @@
+{
+  "name": "fs-transform",
+  "version": "0.0.0",
+  "description": "Fast, rule based, file system transformations.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jshint index.js && lab -v -c test/*",
+    "doc": "jsdoc -d doc index.js lib/"
+  },
+  "jshintConfig": {
+    "node": true,
+    "curly": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Runnable/fs-transform.git"
+  },
+  "keywords": [
+    "file",
+    "transforms",
+    "move",
+    "copy",
+    "search",
+    "replace"
+  ],
+  "author": "Ryan Sandor Richards <ryan@runnable.com> (http://www.runnable.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Runnable/fs-transform/issues"
+  },
+  "homepage": "https://github.com/rsandor/fs-transform",
+  "dependencies": {
+    "101": "^0.16.1",
+    "async": "^0.9.0"
+  },
+  "devDependencies": {
+    "callback-count": "^0.1.0",
+    "code": "^1.4.0",
+    "jsdoc": "^3.3.0-beta3",
+    "jshint": "^2.6.3",
+    "lab": "^5.5.1",
+    "sinon": "^1.14.1"
+  }
+}
