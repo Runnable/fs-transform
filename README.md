@@ -1,5 +1,9 @@
 # fs-transform
 
+![Build Status](https://travis-ci.org/Runnable/fs-transform.svg?branch=master)
+![Dependency Status](https://david-dm.org/Runnable/fs-transform.svg)
+![devDependency Status](https://david-dm.org/Runnable/fs-transform/dev-status.svg)
+
 Fast, rule based, file system transformations.
 
 ## Basic Usage
