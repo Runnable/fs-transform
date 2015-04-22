@@ -516,7 +516,7 @@ describe('Transformer', function() {
         replace: 'b'
       };
 
-      var spy = sinon.spy(transformer.driver, 'sed');
+      var sed = sinon.spy(transformer.driver, 'sed');
       sinon.stub(transformer.driver, 'grep').yields(null, '');
 
       transformer.replace(rule, function (err) {
@@ -526,7 +526,7 @@ describe('Transformer', function() {
         expect(warning.rule).to.equal(rule);
         expect(warning.message)
           .to.equal('Search did not return any results.');
-        expect(spy.callCount).to.equal(0);
+        expect(sed.callCount).to.equal(0);
         done();
       })
     });
@@ -554,6 +554,7 @@ describe('Transformer', function() {
       };
 
       var sed = sinon.stub(transformer.driver, 'sed').yields();
+      sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         'file1.txt:12:---',
         'file2.txt:293:---'
@@ -575,6 +576,7 @@ describe('Transformer', function() {
       };
 
       var sed = sinon.stub(transformer.driver, 'sed').yields();
+      sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         'Binary file example.bin matches',
         'file1:342:---'
@@ -600,6 +602,7 @@ describe('Transformer', function() {
       };
 
       var sed = sinon.stub(transformer.driver, 'sed').yields();
+      sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         'file1.txt:23:---',
         'file2.txt:22:---',
@@ -628,6 +631,7 @@ describe('Transformer', function() {
       };
 
       var sed = sinon.stub(transformer.driver, 'sed').yields();
+      sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         'applied.txt:111:---',
         'okay.txt:2384:---',
@@ -656,6 +660,7 @@ describe('Transformer', function() {
       };
 
       var sed = sinon.stub(transformer.driver, 'sed').yields();
+      sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         'file1.txt:50:---',
         'file1.txt:89:---',
@@ -681,17 +686,20 @@ describe('Transformer', function() {
       };
       var command = 'sed -i "" "s/alpha/beta/" file.txt';
       var spy = sinon.spy(transformer, 'saveCommand');
-      var sed = sinon.stub(transformer.driver, 'sed').returns(command).yields();
 
+      sinon.stub(transformer.driver, 'sed')
+        .returns(command)
+        .yieldsAsync();
+      sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         'file.txt:10:---',
         'file.txt:12:---',
         'file.txt:14:---'
-      ].join('\n'))
+      ].join('\n'));
 
       transformer.replace(rule, function () {
         expect(spy.callCount).to.equal(3);
-        expect(spy.calledWith(command));
+        expect(spy.calledWith(command)).to.be.true();
         done();
       });
     });
@@ -704,10 +712,11 @@ describe('Transformer', function() {
       };
 
       var spy = sinon.spy(transformer, 'saveCommand');
-      var sed = sinon.stub(transformer.driver, 'sed')
-        .returns('command')
-        .yields(new Error('Error'));
 
+      sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'sed')
+        .returns('command')
+        .yieldsAsync(new Error('Error'));
       sinon.stub(transformer.driver, 'grep').yields(null, [
         'file.txt:10:---',
         'file.txt:12:---',
@@ -716,6 +725,63 @@ describe('Transformer', function() {
 
       transformer.replace(rule, function () {
         expect(spy.callCount).to.equal(0);
+        done();
+      });
+    });
+
+    it('should make a backup for every file changed', function (done) {
+      var rule = {
+        action: 'replace',
+        search: 'awesome',
+        replace: 'super'
+      };
+
+      sinon.stub(transformer.driver, 'sed').yields();
+      var copy = sinon.stub(transformer.driver, 'copy').yields();
+
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        'file.txt:10:---',
+        'file.txt:12:---',
+        'file.txt:14:---',
+        'file2.txt:182:---',
+        'file2.txt:12:---',
+        'file2.txt:16:---',
+        'file3.txt:162:---'
+      ].join('\n'))
+
+      var fileNames = [
+        'file.txt',
+        'file2.txt',
+        'file3.txt'
+      ];
+
+      transformer.replace(rule, function () {
+        expect(copy.callCount).to.equal(3);
+        fileNames.forEach(function (name) {
+          expect(copy.calledWith(name, name + Transformer.ORIGINAL_POSTFIX))
+            .to.be.true();
+        });
+        done();
+      });
+    });
+
+    it('should not proceed on create backup error', function (done) {
+      var rule = {
+        action: 'replace',
+        search: 'awesome',
+        replace: 'super'
+      };
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        'file.txt:10:---',
+        'file.txt:12:---',
+      ].join('\n'));
+      var sed = sinon.stub(transformer.driver, 'sed')
+        .returns('command')
+        .yields();
+      sinon.stub(transformer.driver, 'copy').yields(new Error('Copy error'));
+
+      transformer.replace(rule, function () {
+        expect(sed.callCount).to.equal(0);
         done();
       });
     });
