@@ -163,4 +163,12 @@ describe('functional', function () {
     });
   }); // end 'replace'
 
+  describe('getScript', function() {
+
+  }); // end 'getScript'
+
+  describe('warnings', function() {
+    // body...
+  }); // end 'warnings'
+
 }); // end 'functional'
