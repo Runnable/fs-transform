@@ -116,8 +116,8 @@ describe('Transformer', function() {
       transformer.setAction('foo', spy);
       transformer.getAction('foo')('a', 'b', 'c');
       expect(spy.calledOnce).to.be.true();
-      expect(spy.calledWith('a', 'b', 'c'));
-      expect(spy.calledOn(transformer));
+      expect(spy.calledWith('a', 'b', 'c')).to.be.true();
+      expect(spy.calledOn(transformer)).to.be.true();
       done();
     });
   }); // end 'setAction & getAction'
@@ -563,8 +563,10 @@ describe('Transformer', function() {
       transformer.replace(rule, function (err) {
         if (err) { return done(err); }
         expect(sed.callCount).to.equal(2);
-        expect(sed.calledWith('a', 'b', 'file1.txt', 12));
-        expect(sed.calledWith('a', 'b', 'file2.txt', 293));
+        expect(sed.calledWith('a', 'b', '/etc/file1.txt', 12))
+          .to.be.true();
+        expect(sed.calledWith('a', 'b', '/etc/file2.txt', 293))
+          .to.be.true();
         done();
       });
     });
@@ -579,12 +581,12 @@ describe('Transformer', function() {
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         'Binary file /etc/example.bin matches',
-        '/etc/file1:342:---'
+        '/etc/file1.txt:342:---'
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
         expect(sed.callCount).to.equal(1);
-        expect(sed.calledWith('a', 'b', 'file1.txt', 342));
+        expect(sed.calledWith('a', 'b', '/etc/file1.txt', 342)).to.be.true();
         done();
       });
     });
@@ -612,8 +614,8 @@ describe('Transformer', function() {
 
       transformer.replace(rule, function (err) {
         expect(sed.callCount).to.equal(2);
-        expect(sed.calledWith('a', 'b', 'file2.txt', 700));
-        expect(sed.calledWith('a', 'b', 'file3.txt', 29));
+        expect(sed.calledWith('a', 'b', '/etc/file2.txt', 78)).to.be.true();
+        expect(sed.calledWith('a', 'b', '/etc/file3.txt', 182)).to.be.true();
         done();
       });
     });

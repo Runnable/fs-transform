@@ -221,8 +221,8 @@ describe('fs-driver', function () {
       it('should use `fs.existsSync` to perform the check', function(done) {
         var stub = sinon.stub(fs, 'existsSync');
         driver.exists('example');
-        expect(stub.calledOnce);
-        expect(stub.calledWith('/tmp/example'));
+        expect(stub.calledOnce).to.be.true();
+        expect(stub.calledWith('/tmp/example')).to.be.true();
         fs.existsSync.restore();
         done();
       });
