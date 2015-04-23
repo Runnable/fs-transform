@@ -26,7 +26,9 @@ module.exports = {
   removeTestDir: removeTestDir,
   exists: exists,
   diff: diff,
-  originalDiff: originalDiff
+  mockDiff: mockDiff,
+  read: read,
+  readMock: readMock
 };
 
 /**
@@ -77,11 +79,37 @@ function diff(a, b, cb) {
  * @param {string} originalFile File in the original root directory mock.
  * @param {function} cb Callback to execute with the diff of the files.
  */
-function originalDiff(newFile, originalFile, cb) {
+function mockDiff(newFile, originalFile, cb) {
   var command = [
     'diff',
     path.resolve(testPath, newFile),
     path.resolve(mockPath, originalFile)
   ].join(' ');
   childProcess.exec(command, cb);
+}
+
+/**
+ * Helper for fs.readFileSync.
+ * @param {string} filename Name of the file to read in the test directory.
+ * @param {object} [options] Options to send to f.readFileSync.
+ * @return {string} The contents of the file.
+ */
+function read(filename, options) {
+  return fs.readFileSync(
+    path.resolve(testPath, filename),
+    options
+  ).toString();
+}
+
+/**
+ * Helper to read files from the original mock directory.
+ * @param {string} filename Name of the file to read in the test directory.
+ * @param {object} [options] Options to send to f.readFileSync.
+ * @return The contents of the file.
+ */
+function readMock(filename, options) {
+  return fs.readFileSync(
+    path.resolve(mockPath, filename),
+    options
+  ).toString();
 }

@@ -556,8 +556,8 @@ describe('Transformer', function() {
       var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        'file1.txt:12:---',
-        'file2.txt:293:---'
+        '/etc/file1.txt:12:---',
+        '/etc/file2.txt:293:---'
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
@@ -578,8 +578,8 @@ describe('Transformer', function() {
       var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        'Binary file example.bin matches',
-        'file1:342:---'
+        'Binary file /etc/example.bin matches',
+        '/etc/file1:342:---'
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
@@ -604,10 +604,10 @@ describe('Transformer', function() {
       var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        'file1.txt:23:---',
-        'file2.txt:22:---',
-        'file2.txt:78:---',
-        'file3.txt:182:---'
+        '/etc/file1.txt:23:---',
+        '/etc/file2.txt:22:---',
+        '/etc/file2.txt:78:---',
+        '/etc/file3.txt:182:---'
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
@@ -633,9 +633,9 @@ describe('Transformer', function() {
       var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        'applied.txt:111:---',
-        'okay.txt:2384:---',
-        'file1.txt:50:---'
+        '/etc/applied.txt:111:---',
+        '/etc/okay.txt:2384:---',
+        '/etc/file1.txt:50:---'
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
@@ -662,9 +662,9 @@ describe('Transformer', function() {
       var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        'file1.txt:50:---',
-        'file1.txt:89:---',
-        'file1.txt:123:---'
+        '/etc/file1.txt:50:---',
+        '/etc/file1.txt:89:---',
+        '/etc/file1.txt:123:---'
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
@@ -692,9 +692,9 @@ describe('Transformer', function() {
         .yieldsAsync();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        'file.txt:10:---',
-        'file.txt:12:---',
-        'file.txt:14:---'
+        '/etc/file.txt:10:---',
+        '/etc/file.txt:12:---',
+        '/etc/file.txt:14:---'
       ].join('\n'));
 
       transformer.replace(rule, function () {
@@ -718,9 +718,9 @@ describe('Transformer', function() {
         .returns('command')
         .yieldsAsync(new Error('Error'));
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        'file.txt:10:---',
-        'file.txt:12:---',
-        'file.txt:14:---'
+        '/etc/file.txt:10:---',
+        '/etc/file.txt:12:---',
+        '/etc/file.txt:14:---'
       ].join('\n'))
 
       transformer.replace(rule, function () {
@@ -740,19 +740,19 @@ describe('Transformer', function() {
       var copy = sinon.stub(transformer.driver, 'copy').yields();
 
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        'file.txt:10:---',
-        'file.txt:12:---',
-        'file.txt:14:---',
-        'file2.txt:182:---',
-        'file2.txt:12:---',
-        'file2.txt:16:---',
-        'file3.txt:162:---'
+        '/etc/file.txt:10:---',
+        '/etc/file.txt:12:---',
+        '/etc/file.txt:14:---',
+        '/etc/file2.txt:182:---',
+        '/etc/file2.txt:12:---',
+        '/etc/file2.txt:16:---',
+        '/etc/file3.txt:162:---'
       ].join('\n'))
 
       var fileNames = [
-        'file.txt',
-        'file2.txt',
-        'file3.txt'
+        '/etc/file.txt',
+        '/etc/file2.txt',
+        '/etc/file3.txt'
       ];
 
       transformer.replace(rule, function () {
@@ -772,8 +772,8 @@ describe('Transformer', function() {
         replace: 'super'
       };
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        'file.txt:10:---',
-        'file.txt:12:---',
+        '/etc/file.txt:10:---',
+        '/etc/file.txt:12:---',
       ].join('\n'));
       var sed = sinon.stub(transformer.driver, 'sed')
         .returns('command')

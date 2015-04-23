@@ -64,6 +64,15 @@ describe('fs-driver', function () {
         .to.equal('/etc/init.d/../foo');
       done();
     });
+
+    it('should return null if given a non string path', function(done) {
+      expect(driver.absolutePath()).to.be.null();
+      expect(driver.absolutePath(undefined)).to.be.null();
+      expect(driver.absolutePath(null)).to.be.null();
+      expect(driver.absolutePath({})).to.be.null();
+      expect(driver.absolutePath(42)).to.be.null();
+      done();
+    });
   }); // end 'absolutePath'
 
   describe('file system', function () {
@@ -137,7 +146,7 @@ describe('fs-driver', function () {
 
     describe('grep', function() {
       it('should return the grep command', function(done) {
-        var command = 'grep -rn search /tmp';
+        var command = 'grep -rn "search" /tmp';
         expect(driver.grep('search', noop)).to.equal(command);
         done();
       });
@@ -145,7 +154,7 @@ describe('fs-driver', function () {
       it('should execute system `grep`', function (done) {
         driver.grep('foo', function (err) {
           if (err) { return done(err); }
-          var command = 'grep -rn foo /tmp';
+          var command = 'grep -rn "foo" /tmp';
           expect(childProcess.exec.calledWith(command))
             .to.be.true();
           done();
@@ -153,9 +162,9 @@ describe('fs-driver', function () {
       });
 
       it('should properly escape search patterns', function(done) {
-        driver.grep('\\lambda', function (err) {
+        driver.grep('\\lambda"', function (err) {
           if (err) { return done(err); }
-          var command = 'grep -rn \\\\lambda /tmp';
+          var command = 'grep -rn "\\\\\\\\lambda\\\\"" /tmp';
           expect(childProcess.exec.calledWith(command))
             .to.be.true();
           done();

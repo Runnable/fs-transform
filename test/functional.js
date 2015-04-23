@@ -19,9 +19,7 @@ describe('functional', function () {
   describe('copy', function() {
     it('should copy a file', function (done) {
       var dest = 'A-copy';
-      var rules = [
-        { action: 'copy', source: 'A', dest: dest }
-      ];
+      var rules = [{ action: 'copy', source: 'A', dest: dest }];
       Transformer.transform(fs.path, rules, function (err) {
         if (err) { return done(err); }
         expect(fs.exists(dest)).to.be.true();
@@ -100,7 +98,7 @@ describe('functional', function () {
         expect(transformer.warnings).to.not.be.empty();
         expect(fs.exists(source)).to.be.false();
         expect(fs.exists(dest)).to.be.true();
-        fs.originalDiff(dest, source, function (err, diff) {
+        fs.mockDiff(dest, source, function (err, diff) {
           if (err) { return done(err); }
           expect(diff).to.be.empty();
           done();
@@ -108,4 +106,61 @@ describe('functional', function () {
       });
     });
   }); // end 'rename'
+
+  describe('replace', function() {
+    it('should replace text in a file', function(done) {
+      var search = 'File B is good';
+      var replace = 'File B is great'; // stay positive!
+      var rules = [{ action: 'replace', search: search, replace: replace }];
+      Transformer.transform(fs.path, rules, function (err, transformer) {
+        if (err) { return done(err); }
+        [fs.read('B'), fs.read('sub/subsub/D')].forEach(function (data) {
+          expect(data.match(search)).to.be.null();
+          expect(data.match(replace)).to.not.be.null();
+        });
+        done();
+      });
+    });
+
+    it('should replace text with special characters', function(done) {
+      var rules = [
+        { action: 'replace', search: '\\sum', replace: '\\prod' },
+        { action: 'replace', search: '"cool"', replace: '"neat"' }
+      ];
+      Transformer.transform(fs.path, rules, function (err, transformer) {
+        if (err) { return done(err); }
+        var dataC = fs.read('sub/C');
+        expect(dataC.match(rules[0].search)).to.be.null();
+        expect(dataC.match(rules[0].replace)).to.not.be.null();
+        var dataD = fs.read('sub/subsub/D');
+        expect(dataD.match(rules[1].search)).to.be.null();
+        expect(dataD.match(rules[1].replace)).to.not.be.null();
+        done();
+      });
+    });
+
+    it('should allow exclusions', function(done) {
+      var rules = [{
+        action: 'replace',
+        search: 'Mew',
+        replace: 'Woof',
+        exclude: [
+          { name: 'B' },
+          { name: 'sub/C', line: 8 }
+        ]
+      }];
+      Transformer.transform(fs.path, rules, function (err, transformer) {
+        if (err) { return done(err); }
+        var dataB = fs.read('B');
+        var linesC = fs.read('sub/C').split('\n');
+        expect(linesC[3]).to.equal('Woof');
+        expect(linesC[4]).to.equal('Woof');
+        expect(linesC[5]).to.equal('Woof');
+        expect(linesC[7]).to.equal('Mew');
+        expect(dataB.match('Woof')).to.be.null();
+        done();
+      });
+    });
+  }); // end 'replace'
+
 }); // end 'functional'
