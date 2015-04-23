@@ -139,7 +139,7 @@ describe('functional', function () {
       });
     });
 
-    it('should allow exclusions', function(done) {
+    it('should apply exclusions', function(done) {
       var rules = [{
         action: 'replace',
         search: 'Mew',
@@ -162,13 +162,4 @@ describe('functional', function () {
       });
     });
   }); // end 'replace'
-
-  describe('getScript', function() {
-
-  }); // end 'getScript'
-
-  describe('warnings', function() {
-    // body...
-  }); // end 'warnings'
-
 }); // end 'functional'
