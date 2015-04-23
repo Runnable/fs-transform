@@ -39,9 +39,9 @@ describe('fs-driver', function () {
       done();
     });
 
-    it('should use the empty string if no root was given', function (done) {
+    it('should use the current working directory if no root was given', function (done) {
       var driver = new FsDriver();
-      expect(driver.root).to.equal('');
+      expect(driver.root).to.equal(process.cwd());
       done();
     });
   });
@@ -85,7 +85,7 @@ describe('fs-driver', function () {
         expect(driver.move('foo', 'bar', noop)).to.equal(command);
         done();
       });
-      
+
       it('should execute system `mv` when moving a file', function (done) {
         var source = 'a.txt';
         var dest = 'b.txt';
