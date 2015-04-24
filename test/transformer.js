@@ -16,6 +16,7 @@ var async = require('async');
 
 var Transformer = require('../lib/transformer');
 var FsDriver = require('../lib/fs-driver');
+var Warning = require('../lib/warning');
 
 describe('Transformer', function() {
   describe('interface', function() {
@@ -75,7 +76,110 @@ describe('Transformer', function() {
       expect(transformer.driver.root).to.equal('/etc');
       done();
     });
+
+    it('should keep a list of warnings', function(done) {
+      var transformer = new Transformer('/etc', []);
+      expect(transformer.warnings).to.be.an.array();
+      done();
+    });
+
+    it('should keep a list of results', function(done) {
+      var transformer = new Transformer('/etc', []);
+      expect(transformer.results).to.be.an.array();
+      done();
+    });
+
+    it('should keep a list of commands', function (done) {
+      var transformer = new Transformer('/etc', []);
+      expect(transformer.commands).to.be.an.array();
+      done();
+    });
+
+    it('should keep a list of name changes', function(done) {
+      var transformer = new Transformer('/etc', []);
+      expect(transformer.nameChanges).to.be.an.array();
+      done();
+    });
   }); // end 'constructor'
+
+  describe('pushResult', function() {
+    it('should push a new result to the result list', function(done) {
+      var transformer = new Transformer('/', []);
+      var rule = { action: 'copy', source: 'a', dest: 'b' };
+      transformer.pushResult(rule);
+      expect(transformer.results).to.not.be.empty();
+      var result = transformer.results[0];
+      expect(result.rule).to.equal(rule);
+      expect(result.commands).to.be.an.array();
+      expect(result.commands).to.be.empty();
+      expect(result.warnings).to.be.an.array();
+      expect(result.warnings).to.be.empty();
+      expect(result.nameChanges).to.be.an.array();
+      expect(result.nameChanges).to.be.empty();
+      expect(result.diffs).to.be.an.object();
+      done();
+    });
+
+    it('should set the `currentResult` instance variable', function (done) {
+      var transformer = new Transformer('/', []);
+      var rule = { action: 'copy', source: 'a', dest: 'b' };
+      transformer.pushResult(rule);
+      expect(transformer.results).to.not.be.empty();
+      expect(transformer.currentResult).to.not.be.null();
+      expect(transformer.results[0]).to.equal(transformer.currentResult);
+      done();
+    });
+  }); // end 'pushResult'
+
+  describe('addWarning', function() {
+    it('should add a warning to master list', function(done) {
+      var object = { name: 'woot' };
+      var message = 'Very interesting';
+      var transformer = new Transformer('/', []);
+      transformer.addWarning(object, message);
+      expect(transformer.warnings).to.not.be.empty();
+      var warning = transformer.warnings[0];
+      expect(warning).instanceof(Warning);
+      expect(warning.rule).to.equal(object);
+      expect(warning.message).to.equal(message);
+      done();
+    });
+
+    it('should add the warning to the current result', function (done) {
+      var transformer = new Transformer('/', []);
+      var result = transformer.pushResult({ action: 'copy' });
+      transformer.addWarning({ name: 'woot' }, 'Very interesting');
+      var warning = transformer.warnings[0];
+      expect(result.warnings).to.not.be.empty();
+      expect(result.warnings[0]).to.equal(warning);
+      done();
+    });
+  }); // end 'addWarning'
+
+  describe('addNameChange', function() {
+    it('should add the name change to the master list', function (done) {
+      var from = 'a';
+      var to = 'b';
+      var transformer = new Transformer('/', []);
+      transformer.addNameChange(from, to);
+      expect(transformer.nameChanges).to.not.be.empty();
+      var change = transformer.nameChanges[0];
+      expect(change.from).to.equal(from);
+      expect(change.to).to.equal(to);
+      done();
+    });
+
+    it('should add the name change to the current result', function (done) {
+      var transformer = new Transformer('/', []);
+      var result = transformer.pushResult({ action: 'rename' });
+      transformer.addNameChange('a', 'b');
+      expect(transformer.nameChanges).to.not.be.empty();
+      var change = transformer.nameChanges[0];
+      expect(result.nameChanges).to.not.be.empty();
+      expect(result.nameChanges[0]).to.equal(change);
+      done();
+    });
+  }); // end 'addNameChange'
 
   describe('execute', function () {
     it('should apply all given transformer rules', function(done) {
@@ -144,7 +248,7 @@ describe('Transformer', function() {
 
       done();
     });
-  });
+  }); // end 'getScript'
 
   describe('applyRule', function() {
     var transformer;

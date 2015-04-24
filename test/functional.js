@@ -195,4 +195,22 @@ describe('functional', function () {
       });
     });
   }); // end 'replace'
+
+  describe('results', function() {
+    it('should add a result for each valid rule', function(done) {
+      var rules = [
+        { action: 'replace', search: '\\sum', replace: '\\prod' },
+        { action: 'replace', search: '"cool"', replace: '"neat"' },
+        { action: 'replace', search: '/some/path/foo', replace: '/path/"bar"'},
+        { action: 'copy', source: 'A', dest: 'A-copy' },
+        { action: 'copy', source: 'B', dest: 'B-copy' },
+        { action: 'copy', source: 'sub/C', dest: 'sub/C-copy' }
+      ];
+      Transformer.transform(fs.path, rules, function (err, transformer) {
+        if (err) { return done(err); }
+        expect(transformer.results.length).to.equal(rules.length);
+        done();
+      });
+    });
+  });
 }); // end 'functional'
