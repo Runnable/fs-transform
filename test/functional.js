@@ -125,16 +125,24 @@ describe('functional', function () {
     it('should replace text with special characters', function(done) {
       var rules = [
         { action: 'replace', search: '\\sum', replace: '\\prod' },
-        { action: 'replace', search: '"cool"', replace: '"neat"' }
+        { action: 'replace', search: '"cool"', replace: '"neat"' },
+        { action: 'replace', search: '/some/path/foo', replace: '/path/"bar"'}
       ];
       Transformer.transform(fs.path, rules, function (err, transformer) {
         if (err) { return done(err); }
+
         var dataC = fs.read('sub/C');
         expect(dataC.match(rules[0].search)).to.be.null();
         expect(dataC.match(rules[0].replace)).to.not.be.null();
+
         var dataD = fs.read('sub/subsub/D');
         expect(dataD.match(rules[1].search)).to.be.null();
         expect(dataD.match(rules[1].replace)).to.not.be.null();
+
+        var dataA = fs.read('A');
+        expect(dataA.match(rules[2].search)).to.be.null();
+        expect(dataA.match(rules[2].replace)).to.not.be.null();
+
         done();
       });
     });

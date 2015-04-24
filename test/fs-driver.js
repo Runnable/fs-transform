@@ -146,7 +146,7 @@ describe('fs-driver', function () {
 
     describe('grep', function() {
       it('should return the grep command', function(done) {
-        var command = 'grep -rn "search" /tmp';
+        var command = 'grep -rn \'search\' /tmp';
         expect(driver.grep('search', noop)).to.equal(command);
         done();
       });
@@ -154,7 +154,7 @@ describe('fs-driver', function () {
       it('should execute system `grep`', function (done) {
         driver.grep('foo', function (err) {
           if (err) { return done(err); }
-          var command = 'grep -rn "foo" /tmp';
+          var command = 'grep -rn \'foo\' /tmp';
           expect(childProcess.exec.calledWith(command))
             .to.be.true();
           done();
@@ -162,9 +162,9 @@ describe('fs-driver', function () {
       });
 
       it('should properly escape search patterns', function(done) {
-        driver.grep('\\lambda"', function (err) {
+        driver.grep('\\lambda\'', function (err) {
           if (err) { return done(err); }
-          var command = 'grep -rn "\\\\\\\\lambda\\\\"" /tmp';
+          var command = 'grep -rn \'\\\\lambda\\\'\' /tmp';
           expect(childProcess.exec.calledWith(command))
             .to.be.true();
           done();
@@ -182,16 +182,16 @@ describe('fs-driver', function () {
 
     describe('sed', function() {
       it('should return the correct sed command', function(done) {
-        var command = 'sed -i.last 1337s/bar/baz/g /tmp/file1.txt';
-        expect(driver.sed('bar', 'baz', 'file1.txt', 1337, noop))
-          .to.equal(command);
+        var expected = 'sed -i.last \'1337s/bar/baz/g\' /tmp/file1.txt';
+        var actual = driver.sed('bar', 'baz', 'file1.txt', 1337, noop);
+        expect(actual).to.equal(expected);
         done();
       });
 
       it('should execute system `sed`', function(done) {
         driver.sed('foo', 'bar', 'example.txt', 20, function (err) {
           if (err) { return done(err); }
-          var command = 'sed -i.last 20s/foo/bar/g /tmp/example.txt';
+          var command = 'sed -i.last \'20s/foo/bar/g\' /tmp/example.txt';
           expect(childProcess.exec.calledWith(command))
             .to.be.true();
           done();
@@ -201,7 +201,7 @@ describe('fs-driver', function () {
       it('should properly escape search and replace', function(done) {
         driver.sed('/foo', '/bar', 'example.txt', 17, function (err) {
           if (err) { return done(err); }
-          var command = 'sed -i.last 17s/\\/foo/\\/bar/g /tmp/example.txt';
+          var command = 'sed -i.last \'17s/\\/foo/\\/bar/g\' /tmp/example.txt';
           expect(childProcess.exec.calledWith(command))
             .to.be.true();
           done();
