@@ -154,7 +154,8 @@ describe('functional', function () {
         replace: 'Woof',
         exclude: [
           { name: 'B' },
-          { name: 'sub/C', line: 8 }
+          { name: 'sub/C', line: 8 },
+          { name: 'not-there' }
         ]
       }];
       Transformer.transform(fs.path, rules, function (err, transformer) {
@@ -166,6 +167,30 @@ describe('functional', function () {
         expect(linesC[5]).to.equal('Woof');
         expect(linesC[7]).to.equal('Mew');
         expect(dataB.match('Woof')).to.be.null();
+        expect(transformer.warnings).to.not.be.empty();
+        expect(transformer.warnings[0].message)
+          .to.equal('Unused exclude.');
+        done();
+      });
+    });
+
+    it('should warn if excludes all results', function (done) {
+      var search = 'File A';
+      var replace = 'File X';
+      var rules = [{
+        action: 'replace',
+        search: search,
+        replace: replace,
+        exclude: [{ name: 'A' }]
+      }];
+      Transformer.transform(fs.path, rules, function (err, transformer) {
+        if (err) { return done(err); }
+        var dataA = fs.read('A');
+        expect(dataA.match(search)).to.not.be.null();
+        expect(dataA.match(replace)).to.be.null();
+        expect(transformer.warnings).to.not.be.empty();
+        expect(transformer.warnings[0].message)
+          .to.equal('All results were excluded.');
         done();
       });
     });
