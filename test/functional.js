@@ -212,5 +212,5 @@ describe('functional', function () {
         done();
       });
     });
-  });
+  }); // end 'results'
 }); // end 'functional'

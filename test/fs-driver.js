@@ -79,7 +79,7 @@ describe('fs-driver', function () {
     var driver = new FsDriver('/tmp');
 
     beforeEach(function (done) {
-      sinon.stub(childProcess, 'exec').yields();
+      sinon.stub(childProcess, 'exec').yieldsAsync();
       done();
     });
 
@@ -236,6 +236,33 @@ describe('fs-driver', function () {
         fs.existsSync.restore();
         done();
       });
-    });
+    }); // end 'exists'
+
+    describe('diff', function() {
+      it('should return the correct diff command', function (done) {
+        var command = driver.diff('/tmp/a', '/tmp/b', function (err) {
+          if (err) { return done(err); }
+          expect(command).to.equal('diff -u /tmp/a /tmp/b');
+          done();
+        });
+      });
+
+      it('should execute system diff', function (done) {
+        driver.diff('/tmp/a', '/tmp/b', function (err) {
+          expect(childProcess.exec.calledWith('diff -u /tmp/a /tmp/b'))
+            .to.be.true();
+          done();
+        });
+      });
+
+      it('should yield errors to the given callback', function (done) {
+        var error = new Error('diff error');
+        childProcess.exec.yields(error);
+        driver.diff('a', 'b', function (err) {
+          expect(err).to.equal(error);
+          done();
+        });
+      });
+    }); // end 'diff'
   }); // end 'file system'
 }); // end 'fs-driver'

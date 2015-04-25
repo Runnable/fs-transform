@@ -181,6 +181,40 @@ describe('Transformer', function() {
     });
   }); // end 'addNameChange'
 
+  describe('addDiff', function() {
+    it('should add the diff to the current result', function (done) {
+      var transformer = new Transformer('/', []);
+      var result = transformer.pushResult({ action: 'replace' });
+      var filename = '/etc/file1.txt';
+      var diff = 'THIS IS SPARTA';
+      transformer.addDiff(filename, diff);
+      expect(result.diffs[filename]).to.be.an.array();
+      expect(result.diffs[filename]).to.not.be.empty();
+      expect(result.diffs[filename][0]).to.equal(diff);
+      done();
+    });
+
+    it('should add multiple diffs to the current result', function (done) {
+      var transformer = new Transformer('/', []);
+      var result = transformer.pushResult({ action: 'replace' });
+      var filename = '/etc/file1.txt';
+      var diff = 'THIS IS SPARTA';
+      var filename2 = '/etc/file2.txt';
+      var diff2 = 'THIS IS ARTASPAY';
+      transformer.addDiff(filename, diff);
+      transformer.addDiff(filename, diff2);
+      transformer.addDiff(filename2, diff2);
+      expect(result.diffs[filename]).to.be.an.array();
+      expect(result.diffs[filename].length).to.equal(2);
+      expect(result.diffs[filename][0]).to.equal(diff);
+      expect(result.diffs[filename][1]).to.equal(diff2);
+      expect(result.diffs[filename2]).to.be.an.array();
+      expect(result.diffs[filename2]).to.not.be.empty();
+      expect(result.diffs[filename2][0]).to.equal(diff2);
+      done();
+    });
+  });
+
   describe('execute', function () {
     it('should apply all given transformer rules', function(done) {
       var transformer = new Transformer('/etc', [1, 2, 3]);
@@ -560,90 +594,96 @@ describe('Transformer', function() {
 
   describe('replace', function() {
     var transformer;
-
     beforeEach(function (done) {
       transformer = new Transformer('/etc', []);
       done();
     });
 
-    it('should add a warning and do nothing if not given a search pattern', function(done) {
-      var grepSpy = sinon.spy(transformer.driver, 'grep');
-      var sedSpy = sinon.spy(transformer.driver, 'sed');
-      var rule = {};
-      transformer.replace(rule, function (err) {
-        expect(grepSpy.callCount).to.equal(0);
-        expect(sedSpy.callCount).to.equal(0);
-        expect(transformer.warnings.length).to.equal(1);
-        var warning = transformer.warnings[0];
-        expect(warning.rule).to.equal(rule);
-        expect(warning.message).to.equal('Search pattern not specified.');
-        done();
-      });
-    });
+    describe('warnings', function() {
+      var grepSpy;
+      var sedSpy;
+      var copySpy;
+      var removeSpy;
+      var diffSpy;
 
-    it('should add a warning and do nothing if no replacement was given', function(done) {
-      var grepSpy = sinon.spy(transformer.driver, 'grep');
-      var sedSpy = sinon.spy(transformer.driver, 'sed');
-      var rule = { search: 'a' };
-      transformer.replace(rule, function (err) {
-        expect(grepSpy.callCount).to.equal(0);
-        expect(sedSpy.callCount).to.equal(0);
-        expect(transformer.warnings.length).to.equal(1);
-        var warning = transformer.warnings[0];
-        expect(warning.rule).to.equal(rule);
-        expect(warning.message).to.equal('Replacement not specified.');
-        done();
-      });
-    });
-
-    it('should add a warning if excludes is not an array', function(done) {
-      var rule = {
-        search: 'a',
-        replace: 'b',
-        exclude: 1776
-      };
-      sinon.stub(transformer.driver, 'grep', function() {
-        expect(transformer.warnings.length).to.equal(1);
-        var warning = transformer.warnings[0];
-        expect(warning.rule).to.equal(rule);
-        expect(warning.message)
-          .to.equal('Excludes not supplied as an array, omitting.');
+      beforeEach(function (done) {
+        transformer = new Transformer('/etc', []);
+        grepSpy = sinon.spy(transformer.driver, 'grep');
+        sedSpy = sinon.spy(transformer.driver, 'sed');
+        copySpy = sinon.spy(transformer.driver, 'copy');
+        removeSpy = sinon.spy(transformer.driver, 'remove');
+        diffSpy = sinon.spy(transformer.driver, 'diff');
         done();
       });
 
-      transformer.replace(rule);
-    });
+      it('should add a warning and do nothing if not given a search pattern', function(done) {
+        var rule = {};
+        transformer.replace(rule, function (err) {
+          expect(grepSpy.callCount).to.equal(0);
+          expect(sedSpy.callCount).to.equal(0);
+          expect(copySpy.callCount).to.equal(0);
+          expect(removeSpy.callCount).to.equal(0);
+          expect(diffSpy.callCount).to.equal(0);
+          expect(transformer.warnings.length).to.equal(1);
+          var warning = transformer.warnings[0];
+          expect(warning.rule).to.equal(rule);
+          expect(warning.message).to.equal('Search pattern not specified.');
+          done();
+        });
+      });
 
-    it('should add a warning and do nothing if no files match the pattern', function(done) {
-      var rule = {
-        search: 'a',
-        replace: 'b'
-      };
+      it('should add a warning and do nothing if no replacement was given', function(done) {
+        var rule = { search: 'a' };
+        transformer.replace(rule, function (err) {
+          expect(grepSpy.callCount).to.equal(0);
+          expect(sedSpy.callCount).to.equal(0);
+          expect(copySpy.callCount).to.equal(0);
+          expect(removeSpy.callCount).to.equal(0);
+          expect(diffSpy.callCount).to.equal(0);
+          expect(transformer.warnings.length).to.equal(1);
+          var warning = transformer.warnings[0];
+          expect(warning.rule).to.equal(rule);
+          expect(warning.message).to.equal('Replacement not specified.');
+          done();
+        });
+      });
 
-      var sed = sinon.spy(transformer.driver, 'sed');
-      sinon.stub(transformer.driver, 'grep').yields(null, '');
+      it('should add a warning if excludes is not an array', function(done) {
+        var rule = { search: 'a', replace: 'b', exclude: 1776 };
+        transformer.driver.grep.restore();
+        sinon.stub(transformer.driver, 'grep', function() {
+          expect(transformer.warnings.length).to.equal(1);
+          var warning = transformer.warnings[0];
+          expect(warning.rule).to.equal(rule);
+          expect(warning.message)
+            .to.equal('Excludes not supplied as an array, omitting.');
+          done();
+        });
+        transformer.replace(rule);
+      });
 
-      transformer.replace(rule, function (err) {
-        if (err) { return done(err); }
-        expect(transformer.warnings.length).to.equal(1);
-        var warning = transformer.warnings[0];
-        expect(warning.rule).to.equal(rule);
-        expect(warning.message)
-          .to.equal('Search did not return any results.');
-        expect(sed.callCount).to.equal(0);
-        done();
-      })
-    });
+      it('should add a warning and do nothing if no files match the pattern', function(done) {
+        var rule = { search: 'a', replace: 'b' };
+        transformer.driver.grep.restore();
+        sinon.stub(transformer.driver, 'grep').yields(null, '');
+        transformer.replace(rule, function (err) {
+          if (err) { return done(err); }
+          expect(transformer.warnings.length).to.equal(1);
+          var warning = transformer.warnings[0];
+          expect(warning.rule).to.equal(rule);
+          expect(warning.message)
+            .to.equal('Search did not return any results.');
+          expect(copySpy.callCount).to.equal(0);
+          done();
+        })
+      });
+    }); // end 'warnings'
 
     it('should perform a grep for the search and replace', function(done) {
-      var rule = {
-        action: 'replace',
-        search: 'a',
-        replace: 'b'
-      };
-      var stub = sinon.stub(transformer.driver, 'grep', function() {
-        expect(stub.calledOnce).to.be.true();
-        expect(stub.calledWith(rule.search)).to.be.true();
+      var rule = { action: 'replace', search: 'a', replace: 'b' };
+      var grep = sinon.stub(transformer.driver, 'grep', function() {
+        expect(grep.calledOnce).to.be.true();
+        expect(grep.calledWith(rule.search)).to.be.true();
         transformer.driver.grep.restore();
         done();
       });
@@ -651,26 +691,21 @@ describe('Transformer', function() {
     });
 
     it('should call sed on each file in the result set', function(done) {
-      var rule = {
-        action: 'replace',
-        search: 'a',
-        replace: 'b'
-      };
-
       var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         '/etc/file1.txt:12:---',
         '/etc/file2.txt:293:---'
       ].join('\n'));
 
+      var rule = { action: 'replace', search: 'a', replace: 'b' };
       transformer.replace(rule, function (err) {
         if (err) { return done(err); }
         expect(sed.callCount).to.equal(2);
-        expect(sed.calledWith('a', 'b', '/etc/file1.txt', 12))
-          .to.be.true();
-        expect(sed.calledWith('a', 'b', '/etc/file2.txt', 293))
-          .to.be.true();
+        expect(sed.calledWith('a', 'b', '/etc/file1.txt', 12)).to.be.true();
+        expect(sed.calledWith('a', 'b', '/etc/file2.txt', 293)).to.be.true();
         done();
       });
     });
@@ -683,6 +718,8 @@ describe('Transformer', function() {
 
       var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         'Binary file /etc/example.bin matches',
         '/etc/file1.txt:342:---'
@@ -709,6 +746,8 @@ describe('Transformer', function() {
 
       var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         '/etc/file1.txt:23:---',
         '/etc/file2.txt:22:---',
@@ -738,6 +777,8 @@ describe('Transformer', function() {
 
       var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         '/etc/applied.txt:111:---',
         '/etc/okay.txt:2384:---',
@@ -767,6 +808,8 @@ describe('Transformer', function() {
 
       var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         '/etc/file1.txt:50:---',
         '/etc/file1.txt:89:---',
@@ -791,21 +834,24 @@ describe('Transformer', function() {
         replace: 'beta'
       };
       var command = 'sed -i "" "s/alpha/beta/" file.txt';
-      var spy = sinon.spy(transformer, 'saveCommand');
+      var saveCommand = sinon.spy(transformer, 'saveCommand');
 
       sinon.stub(transformer.driver, 'sed')
         .returns(command)
         .yieldsAsync();
       sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         '/etc/file.txt:10:---',
         '/etc/file.txt:12:---',
         '/etc/file.txt:14:---'
       ].join('\n'));
 
-      transformer.replace(rule, function () {
-        expect(spy.callCount).to.equal(3);
-        expect(spy.calledWith(command)).to.be.true();
+      transformer.replace(rule, function (err) {
+        if (err) { return done(err); }
+        expect(saveCommand.callCount).to.equal(3);
+        expect(saveCommand.calledWith(command)).to.be.true();
         done();
       });
     });
@@ -817,9 +863,11 @@ describe('Transformer', function() {
         replace: 'beta'
       };
 
-      var spy = sinon.spy(transformer, 'saveCommand');
+      var saveCommand = sinon.spy(transformer, 'saveCommand');
 
       sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'sed')
         .returns('command')
         .yieldsAsync(new Error('Error'));
@@ -830,21 +878,22 @@ describe('Transformer', function() {
       ].join('\n'))
 
       transformer.replace(rule, function () {
-        expect(spy.callCount).to.equal(0);
+        expect(saveCommand.callCount).to.equal(0);
         done();
       });
     });
 
-    it('should make a backup for every file changed', function (done) {
+    it('should make an original copy for each changed file', function (done) {
       var rule = {
         action: 'replace',
         search: 'awesome',
         replace: 'super'
       };
 
-      sinon.stub(transformer.driver, 'sed').yields();
       var copy = sinon.stub(transformer.driver, 'copy').yields();
-
+      sinon.stub(transformer.driver, 'sed').yields();
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         '/etc/file.txt:10:---',
         '/etc/file.txt:12:---',
@@ -861,7 +910,8 @@ describe('Transformer', function() {
         '/etc/file3.txt'
       ];
 
-      transformer.replace(rule, function () {
+      transformer.replace(rule, function (err) {
+        if (err) { return done(err) }
         expect(copy.callCount).to.equal(3);
         fileNames.forEach(function (name) {
           expect(copy.calledWith(name, name + Transformer.ORIGINAL_POSTFIX))
@@ -871,7 +921,7 @@ describe('Transformer', function() {
       });
     });
 
-    it('should not proceed on create backup error', function (done) {
+    it('should not proceed on original copy error', function (done) {
       var rule = {
         action: 'replace',
         search: 'awesome',
@@ -885,9 +935,126 @@ describe('Transformer', function() {
         .returns('command')
         .yields();
       sinon.stub(transformer.driver, 'copy').yields(new Error('Copy error'));
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'diff').yields();
+
+      transformer.replace(rule, function (err) {
+        expect(sed.callCount).to.equal(0);
+        done();
+      });
+    });
+
+    it('should perform and save a diff for each changed file', function(done) {
+      var rule = {
+        action: 'replace',
+        search: 'alpha',
+        replace: 'beta'
+      };
+
+      var deltas = 'this is a delta';
+      var diff = sinon.stub(transformer.driver, 'diff').yields(null, deltas);
+      var addDiff = sinon.spy(transformer, 'addDiff');
+      sinon.stub(transformer.driver, 'sed').yieldsAsync();
+      sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        '/etc/file1.txt:10:---',
+        '/etc/file2.txt:12:---',
+        '/etc/file2.txt:14:---'
+      ].join('\n'));
+
+      transformer.replace(rule, function (err) {
+        if (err) { return done(err); }
+        expect(diff.callCount).to.equal(2);
+        expect(addDiff.callCount).to.equal(2);
+        done();
+      });
+    });
+
+    it('should not yield an error if diff returned code 1', function (done) {
+      var rule = {
+        action: 'replace',
+        search: 'alpha',
+        replace: 'beta'
+      };
+
+      var deltas = 'this is a delta';
+      var error = new Error('Not actually an error');
+      error.code = 1;
+      var diff = sinon.stub(transformer.driver, 'diff').yields(error, deltas);
+      sinon.stub(transformer.driver, 'sed').yieldsAsync();
+      sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        '/etc/file1.txt:10:---',
+        '/etc/file2.txt:12:---',
+        '/etc/file2.txt:14:---'
+      ].join('\n'));
+
+      transformer.replace(rule, function (err) {
+        expect(err).to.be.undefined();
+        expect(diff.callCount).to.equal(2);
+        // TODO Track if diffs are actually being saved.
+        done();
+      });
+    });
+
+    it('should yield an error if diff actually failed (code > 1)', function (done) {
+      var rule = {
+        action: 'replace',
+        search: 'alpha',
+        replace: 'beta'
+      };
+
+      var error = new Error('Totally a real error');
+      error.code = 3;
+      var diff = sinon.stub(transformer.driver, 'diff').yields(error);
+      sinon.stub(transformer.driver, 'sed').yieldsAsync();
+      sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        '/etc/file1.txt:10:---',
+        '/etc/file2.txt:12:---',
+        '/etc/file2.txt:14:---'
+      ].join('\n'));
+
+      transformer.replace(rule, function (err) {
+        expect(err).to.not.be.null();
+        expect(diff.callCount).to.equal(1);
+        done();
+      });
+    });
+
+    it('should remove original copies', function (done) {
+      var rule = {
+        action: 'replace',
+        search: 'alpha',
+        replace: 'beta'
+      };
+
+      var remove = sinon.stub(transformer.driver, 'remove').yieldsAsync();
+      sinon.stub(transformer.driver, 'diff').yields();
+      sinon.stub(transformer.driver, 'sed').yieldsAsync();
+      sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        '/etc/file1.txt:10:---',
+        '/etc/file2.txt:12:---',
+        '/etc/file2.txt:14:---',
+        '/etc/file3.txt:293:---'
+      ].join('\n'));
+
+      var filenames = [
+        '/etc/file1.txt',
+        '/etc/file2.txt',
+        '/etc/file3.txt'
+      ];
 
       transformer.replace(rule, function () {
-        expect(sed.callCount).to.equal(0);
+        expect(remove.callCount).to.equal(3);
+        filenames.forEach(function (name) {
+          var originalName = name + Transformer.ORIGINAL_POSTFIX;
+          expect(remove.calledWith(originalName)).to.be.true();
+        });
         done();
       });
     });
