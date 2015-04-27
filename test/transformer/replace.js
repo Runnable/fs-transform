@@ -398,34 +398,6 @@ describe('Transformer', function() {
       });
     });
 
-    it('should not yield an error if diff returned code 1', function (done) {
-      var rule = {
-        action: 'replace',
-        search: 'alpha',
-        replace: 'beta'
-      };
-
-      var deltas = 'this is a delta';
-      var error = new Error('Not actually an error');
-      error.code = 1;
-      var diff = sinon.stub(transformer.driver, 'diff').yields(error, deltas);
-      sinon.stub(transformer.driver, 'sed').yieldsAsync();
-      sinon.stub(transformer.driver, 'copy').yields();
-      sinon.stub(transformer.driver, 'remove').yields();
-      sinon.stub(transformer.driver, 'grep').yields(null, [
-        '/etc/file1.txt:10:---',
-        '/etc/file2.txt:12:---',
-        '/etc/file2.txt:14:---'
-      ].join('\n'));
-
-      transformer.replace(rule, function (err) {
-        expect(err).to.be.undefined();
-        expect(diff.callCount).to.equal(2);
-        // TODO Track if diffs are actually being saved.
-        done();
-      });
-    });
-
     it('should yield an error if diff actually failed (code > 1)', function (done) {
       var rule = {
         action: 'replace',

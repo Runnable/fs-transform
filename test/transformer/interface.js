@@ -40,4 +40,20 @@ describe('Transformer', function() {
       });
     });
   }); // end 'transform'
+
+  describe('dry', function () {
+    it('should catch rules errors during instantiation', function (done) {
+      Transformer.dry('/tmp', 23, function (err) {
+        expect(err).to.exist();
+        done();
+      });
+    });
+
+    it('should catch JSON parse errors during instantiation', function (done) {
+      Transformer.dry('/tmp', '{sou[p]', function (err) {
+        expect(err).to.exist();
+        done();
+      });
+    });
+  })
 });

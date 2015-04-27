@@ -186,6 +186,13 @@ describe('fs-driver', function () {
           done();
         });
       });
+
+      it('should use the working directory when one is supplied', function(done) {
+        var command = 'grep -rn \'search\' /working';
+        driver.working = '/working';
+        expect(driver.grep('search', noop)).to.equal(command);
+        done();
+      });
     }); // end 'grep'
 
     describe('sed', function() {
@@ -263,8 +270,19 @@ describe('fs-driver', function () {
         });
       });
 
-      it('should yield errors to the given callback', function (done) {
+      it('should ignore errors with code 1 (indicated differences)', function (done) {
         var error = new Error('diff error');
+        error.code = 1;
+        childProcess.exec.yields(error);
+        driver.diff('a', 'b', function (err) {
+          expect(err).to.be.null();
+          done();
+        });
+      });
+
+      it('should yield errors with code > 1 to the given callback', function (done) {
+        var error = new Error('diff error');
+        error.code = 2;
         childProcess.exec.yields(error);
         driver.diff('a', 'b', function (err) {
           expect(err).to.equal(error);
@@ -297,6 +315,31 @@ describe('fs-driver', function () {
         });
       });
     }); // end 'remove'
+
+    describe('removeRecursive', function() {
+      it('should return the correct remove command', function(done) {
+        var command = 'rm -rf /tmp/file1/';
+        expect(driver.removeRecursive('file1/', noop)).to.equal(command);
+        done();
+      });
+
+      it('should execute system `rm -rf`', function(done) {
+        driver.removeRecursive('file', function (err) {
+          if (err) { return done(err); }
+          expect(childProcess.exec.calledWith('rm -rf /tmp/file')).to.be.true();
+          done();
+        });
+      });
+
+      it('should yield errors to the given callback', function(done) {
+        var error = new Error('Remove error');
+        childProcess.exec.yields(error);
+        driver.removeRecursive('file', function (err) {
+          expect(err).to.equal(error);
+          done();
+        });
+      });
+    }); // end 'removeRecursive'
 
     describe('createWorkingDirectory', function() {
       beforeEach(function (done) {
@@ -353,11 +396,12 @@ describe('fs-driver', function () {
 
     describe('removeWorkingDirectory', function() {
       it('should remove the working directory', function(done) {
-        var command = 'rm -rf /tmp/x';
+        var removeRecursive = sinon.stub(driver, 'removeRecursive')
+          .yieldsAsync();
         driver.working = '/tmp/x';
         driver.removeWorkingDirectory(function (err) {
           if (err) { return done(err); }
-          expect(childProcess.exec.calledWith(command)).to.be.true();
+          expect(removeRecursive.calledWith('/tmp/x')).to.be.true();
           expect(driver.working).to.be.null();
           done();
         });

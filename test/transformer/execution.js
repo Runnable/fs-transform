@@ -17,30 +17,111 @@ var async = require('async');
 var Transformer = require('../../lib/transformer');
 
 describe('Transformer', function() {
-  describe('execute', function () {
-    it('should apply all given transformer rules', function(done) {
-      var transformer = new Transformer('/etc', [1, 2, 3]);
-      var stub = sinon.stub(transformer, 'applyRule').yields();
-      transformer.execute(function (err) {
+  describe('transform', function() {
+    it('should execute a run that is committed', function(done) {
+      var transformer = new Transformer('/etc', []);
+      var _execute = sinon.stub(transformer, '_execute');
+      transformer.transform(noop);
+      expect(_execute.calledWith(true, noop)).to.be.true();
+      done();
+    });
+  }); // end 'transform'
+
+  describe('dry', function() {
+    it('should execute a dry run', function(done) {
+      var transformer = new Transformer('/etc', []);
+      var _execute = sinon.stub(transformer, '_execute');
+      transformer.dry(noop);
+      expect(_execute.calledWith(false, noop)).to.be.true();
+      done();
+    });
+  }); // end 'dry'
+
+  describe('_execute', function () {
+    var transformer;
+    var driver;
+
+    beforeEach(function (done) {
+      transformer = new Transformer('/etc', [1, 2, 3]);
+      sinon.stub(transformer, 'applyRule').yieldsAsync();
+      sinon.stub(transformer.driver, 'createWorkingDirectory').yieldsAsync();
+      sinon.stub(transformer.driver, 'removeWorkingDirectory').yieldsAsync();
+      sinon.stub(transformer.driver, 'diff').yieldsAsync();
+      sinon.stub(transformer.driver, 'move').yieldsAsync();
+      sinon.stub(transformer.driver, 'removeRecursive').yieldsAsync();
+      sinon.stub(transformer.driver, 'workingDiff').yieldsAsync();
+      driver = transformer.driver;
+      driver.working = '/tmp/working';
+      done();
+    });
+
+    it('should create a working directory', function(done) {
+      transformer._execute(false, function (err) {
         if (err) { return done(err); }
-        expect(stub.callCount).to.equal(3);
-        expect(stub.calledWith(1)).to.be.true();
-        expect(stub.calledWith(2)).to.be.true();
-        expect(stub.calledWith(3)).to.be.true();
-        transformer.applyRule.restore();
+        expect(driver.createWorkingDirectory.callCount).to.equal(1);
         done();
-      })
+      });
+    });
+
+    it('should apply all given transformer rules', function(done) {
+      transformer._execute(false, function (err) {
+        if (err) { return done(err); }
+        var applyRule = transformer.applyRule;
+        expect(applyRule.callCount).to.equal(3);
+        expect(applyRule.calledWith(1)).to.be.true();
+        expect(applyRule.calledWith(2)).to.be.true();
+        expect(applyRule.calledWith(3)).to.be.true();
+        done();
+      });
+    });
+
+    it('should get a full diff of the results', function(done) {
+      var diff = 'the full diff';
+      driver.workingDiff.yieldsAsync(null, diff);
+      transformer._execute(false, function (err) {
+        if (err) { return done(err); }
+        expect(driver.workingDiff.callCount).to.equal(1);
+        done();
+      });
+    });
+
+    it('should handle errors when performing full diff', function (done) {
+      var error = new Error('Diff error');
+      driver.workingDiff.yieldsAsync(error);
+      transformer._execute(false, function (err) {
+        expect(err).to.equal(error);
+        done();
+      });
+    });
+
+    it('should commit changes when instructed to do so', function(done) {
+      transformer._execute(true, function (err) {
+        if (err) { return done(err); }
+        expect(driver.removeWorkingDirectory.callCount).to.equal(0);
+        expect(driver.move.callCount).to.equal(2);
+        expect(driver.move.calledWith(driver.working, driver.root))
+          .to.be.true();
+        done();
+      });
+    });
+
+    it('should remove the working directory in dry mode', function(done) {
+      transformer._execute(false, function (err) {
+        if (err) { return done(err); }
+        expect(driver.move.callCount).to.equal(0);
+        expect(driver.removeWorkingDirectory.callCount).to.equal(1);
+        done();
+      });
     });
 
     it('should supply the transformer as the second parameter to the callback', function (done) {
-      var transformer = new Transformer('/etc', []);
-      transformer.execute(function (err, t) {
+      transformer._execute(false, function (err, t) {
         if (err) { return done(err); }
         expect(t).to.equal(transformer);
         done();
       });
     });
-  }); // end 'execute'
+  }); // end '_execute'
 
   describe('applyRule', function() {
     var transformer;

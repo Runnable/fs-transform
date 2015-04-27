@@ -114,10 +114,12 @@ describe('functional', function () {
       var rules = [{ action: 'replace', search: search, replace: replace }];
       Transformer.transform(fs.path, rules, function (err, transformer) {
         if (err) { return done(err); }
-        [fs.read('B'), fs.read('sub/subsub/D')].forEach(function (data) {
-          expect(data.match(search)).to.be.null();
-          expect(data.match(replace)).to.not.be.null();
-        });
+        var bData = fs.read('B');
+        var dData = fs.read('sub/subsub/D');
+        expect(bData.match(search)).to.be.null();
+        expect(bData.match(replace)).to.not.be.null();
+        expect(dData.match(search)).to.be.null();
+        expect(dData.match(replace)).to.not.be.null();
         done();
       });
     });
