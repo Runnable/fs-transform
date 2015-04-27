@@ -73,12 +73,20 @@ describe('fs-driver', function () {
       expect(driver.absolutePath(42)).to.be.null();
       done();
     });
+
+    it('should use the working directory if one is present', function (done) {
+      expect(driver.absolutePath('foo')).to.equal('/tmp/foo');
+      driver.working = '/etc';
+      expect(driver.absolutePath('foo')).to.equal('/etc/foo');
+      done();
+    })
   }); // end 'absolutePath'
 
   describe('file system', function () {
-    var driver = new FsDriver('/tmp');
+    var driver;
 
     beforeEach(function (done) {
+      driver = new FsDriver('/tmp');
       sinon.stub(childProcess, 'exec').yieldsAsync();
       done();
     });
@@ -264,5 +272,115 @@ describe('fs-driver', function () {
         });
       });
     }); // end 'diff'
+
+    describe('remove', function() {
+      it('should return the correct remove command', function(done) {
+        var command = 'rm /tmp/file1.txt';
+        expect(driver.remove('file1.txt', noop)).to.equal(command);
+        done();
+      });
+
+      it('should execute system `rm`', function(done) {
+        driver.remove('file', function (err) {
+          if (err) { return done(err); }
+          expect(childProcess.exec.calledWith('rm /tmp/file')).to.be.true();
+          done();
+        });
+      });
+
+      it('should yield errors to the given callback', function(done) {
+        var error = new Error('Remove error');
+        childProcess.exec.yields(error);
+        driver.remove('file', function (err) {
+          expect(err).to.equal(error);
+          done();
+        });
+      });
+    }); // end 'remove'
+
+    describe('createWorkingDirectory', function() {
+      beforeEach(function (done) {
+        driver.root = '/etc/init.d';
+        sinon.stub(driver, 'exists');
+        done();
+      });
+
+      afterEach(function (done) {
+        driver.exists.restore();
+        done();
+      });
+
+      it('should create a new working directory', function(done) {
+        driver.exists.returns(false);
+        driver.createWorkingDirectory(function (err) {
+          if (err) { return done(err); }
+          expect(driver.working).to.equal('/tmp/.init.d.fs-work.0');
+          done();
+        });
+      });
+
+      it('should not overwrite existing working directories', function(done) {
+        driver.exists
+          .onFirstCall().returns(true)
+          .onSecondCall().returns(true)
+          .onThirdCall().returns(false);
+        driver.createWorkingDirectory(function (err) {
+          if (err) { return done(err); }
+          expect(driver.working).to.equal('/tmp/.init.d.fs-work.2');
+          done();
+        });
+      });
+
+      it('should execute system cp -r to copy the working directory', function(done) {
+        var command = 'cp -r /etc/init.d /tmp/.init.d.fs-work.0';
+        driver.exists.returns(false);
+        driver.createWorkingDirectory(function (err) {
+          if (err) { return done(err); }
+          expect(childProcess.exec.calledWith(command)).to.be.true();
+          done();
+        });
+      });
+
+      it('should yield system errors to the supplied callback', function(done) {
+        var error = new Error('Errorz');
+        childProcess.exec.yields(error);
+        driver.createWorkingDirectory(function (err) {
+          expect(err).to.equal(error);
+          done();
+        });
+      });
+    }); // end 'createWorkingDirectory'
+
+    describe('removeWorkingDirectory', function() {
+      it('should remove the working directory', function(done) {
+        var command = 'rm -rf /tmp/x';
+        driver.working = '/tmp/x';
+        driver.removeWorkingDirectory(function (err) {
+          if (err) { return done(err); }
+          expect(childProcess.exec.calledWith(command)).to.be.true();
+          expect(driver.working).to.be.null();
+          done();
+        });
+      });
+
+      it('should not remove a working directory if none exists', function(done) {
+        driver.working = null;
+        driver.removeWorkingDirectory(function (err) {
+          if (err) { return done(err); }
+          expect(childProcess.exec.callCount).to.equal(0);
+          done();
+        });
+      });
+
+      it('should yield system errors to the supplied callback', function(done) {
+        var error = new Error('Remove error');
+        childProcess.exec.yields(error);
+        driver.working = '/woot/sauce';
+        driver.removeWorkingDirectory(function (err) {
+          expect(err).to.equal(error);
+          done();
+        });
+      });
+    }); // end 'removeWorkingDirectory'
   }); // end 'file system'
 }); // end 'fs-driver'
