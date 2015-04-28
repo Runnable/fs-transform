@@ -147,6 +147,25 @@ warnings. The warnings, in order of precedence, are:
   all of the files from the search results.
 
 
+## Dry Runs
+`fs-transform` performs all of its work in a temporary directory so it can
+gracefully fail if an error occurs (leaving the root directory as it was before
+the transforms were applied).
+
+For further safety you can perform transformations in "dry run mode". Using it
+is rather simple:
+
+```js
+Transformer.dry('/root/directory', myRules, function (err, transformer) {
+  // Two things to not:
+  //
+  // 1) Check to see if errors are reported in `err`
+  //
+  // 2) The `transformer` now has all the same information as it would during
+  // an actual run!
+});
+```
+
 ## Generating Shell Scripts
 `fs-transform` also has the ability to generate reusable shell scripts. Whenever
 a command that would mutate the state of the root directory executes
@@ -186,6 +205,19 @@ sed -i "" "93s/Socrates/Plato/g" /tmp/bar
 
 # from rule: {action:"replace",search:"Socrates",replace:"Plato"}
 sed -i "" "4761s/Socrates/Plato/g" /tmp/bar
+```
+
+## Generating Diffs
+`fs-transform` allows you to get a full recursive diff between the root
+before transformations were applied, and the root after. Here's an example of
+how to get the full text diff:
+
+```js
+Transformer.dry('/root/directory', myRules, function (err, transformer) {
+  // Get and log the diff:
+  var fullDiff = transformer.getDiff();
+  console.log(fullDiff);
+});
 ```
 
 ## Contributing
