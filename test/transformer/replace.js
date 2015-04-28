@@ -452,7 +452,9 @@ describe('Transformer', function() {
         expect(remove.callCount).to.equal(3);
         filenames.forEach(function (name) {
           var originalName = name + Transformer.ORIGINAL_POSTFIX;
-          expect(remove.calledWith(originalName)).to.be.true();
+          var dotLastName = name + '.last';
+          expect(remove.calledWith(originalName + ' ' + dotLastName))
+            .to.be.true();
         });
         done();
       });

@@ -230,8 +230,24 @@ describe('functional', function () {
       });
     });
 
-    it('should provide a full diff', function(done) {
-      done();// body...
+    it('should provide a correct full diff', function(done) {
+      var rules = [
+        { action: 'replace', search: '\\sum', replace: '\\prod' },
+        { action: 'replace', search: '"cool"', replace: '"neat"' },
+        { action: 'replace', search: '/some/path/foo', replace: '/path/"bar"'}
+      ];
+
+      Transformer.transform(fs.path, rules, function (err, transformer) {
+        if (err) { return done(err); }
+        var expected = fs.read('../diff').split('\n').filter(function (line) {
+          return line.match(/^[+-][^+-]/);
+        }).join('\n');
+        var diff = transformer.getDiff().split('\n').filter(function (line) {
+          return line.match(/^[+-][^+-]/);
+        }).join('\n');
+        expect(diff).to.equal(expected);
+        done();
+      });
     });
   }); // end 'results'
 }); // end 'functional'

@@ -308,14 +308,14 @@ describe('fs-driver', function () {
       it('should return the correct diff command', function (done) {
         var command = driver.diff('/tmp/a', '/tmp/b', function (err) {
           if (err) { return done(err); }
-          expect(command).to.equal('diff -u /tmp/a /tmp/b');
+          expect(command).to.equal('diff -u -r /tmp/a /tmp/b');
           done();
         });
       });
 
       it('should execute system diff', function (done) {
         driver.diff('/tmp/a', '/tmp/b', function (err) {
-          expect(childProcess.exec.calledWith('diff -u /tmp/a /tmp/b'))
+          expect(childProcess.exec.calledWith('diff -u -r /tmp/a /tmp/b'))
             .to.be.true();
           done();
         });
@@ -392,6 +392,31 @@ describe('fs-driver', function () {
       });
     }); // end 'removeRecursive'
 
+    describe('findWorkingDirectory', function() {
+      beforeEach(function (done) {
+        driver.root = '/etc/init.d';
+        sinon.stub(driver, 'exists');
+        done();
+      });
+
+      it('should find a new working directory', function(done) {
+        driver.exists.returns(false);
+        expect(driver.findWorkingDirectory())
+          .to.equal('/tmp/.init.d.fs-work.0');
+        done();
+      });
+
+      it('should not attempt to use a working directory that already exists', function(done) {
+        driver.exists
+          .onFirstCall().returns(true)
+          .onSecondCall().returns(true)
+          .onThirdCall().returns(false);
+        expect(driver.findWorkingDirectory())
+          .to.equal('/tmp/.init.d.fs-work.2');
+        done();
+      });
+    });
+
     describe('createWorkingDirectory', function() {
       beforeEach(function (done) {
         driver.root = '/etc/init.d';
@@ -409,18 +434,6 @@ describe('fs-driver', function () {
         driver.createWorkingDirectory(function (err) {
           if (err) { return done(err); }
           expect(driver.working).to.equal('/tmp/.init.d.fs-work.0');
-          done();
-        });
-      });
-
-      it('should not overwrite existing working directories', function(done) {
-        driver.exists
-          .onFirstCall().returns(true)
-          .onSecondCall().returns(true)
-          .onThirdCall().returns(false);
-        driver.createWorkingDirectory(function (err) {
-          if (err) { return done(err); }
-          expect(driver.working).to.equal('/tmp/.init.d.fs-work.2');
           done();
         });
       });
