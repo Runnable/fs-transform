@@ -211,9 +211,27 @@ describe('functional', function () {
       Transformer.transform(fs.path, rules, function (err, transformer) {
         if (err) { return done(err); }
         expect(transformer.results.length).to.equal(rules.length);
-        console.log(transformer.results);
         done();
       });
+    });
+
+    it('should provide the correct shell script', function(done) {
+      var rules = [
+        { action: 'replace', search: '\\sum', replace: '\\prod' },
+        { action: 'copy', source: 'A', dest: 'A-copy' },
+        { action: 'copy', source: 'B', dest: 'B-copy' },
+        { action: 'rename', source: 'sub/C', dest: 'sub/C-rename' }
+      ];
+      Transformer.transform(fs.path, rules, function (err, transformer) {
+        if (err) { return done(err); }
+        var script = fs.read('../script.sh').replace(/\$ROOT/g, fs.path);
+        expect(transformer.getScript()).to.equal(script);
+        done();
+      });
+    });
+
+    it('should provide a full diff', function(done) {
+      done();// body...
     });
   }); // end 'results'
 }); // end 'functional'
