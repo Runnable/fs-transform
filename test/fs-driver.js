@@ -82,6 +82,52 @@ describe('fs-driver', function () {
     })
   }); // end 'absolutePath'
 
+  describe('exec', function () {
+    var driver;
+
+    beforeEach(function (done) {
+      driver = new FsDriver('/root/dir');
+      sinon.stub(childProcess, 'exec').yieldsAsync();
+      done();
+    });
+
+    afterEach(function (done) {
+      childProcess.exec.restore();
+      done();
+    });
+
+    it('should execute the given command', function(done) {
+      var command = 'cp wow neat';
+      driver.exec(command, function (err) {
+        expect(childProcess.exec.calledWith(command)).to.be.true();
+        done();
+      });
+    });
+
+    it('should return the command', function(done) {
+      var command = 'cp gnarly brah';
+      expect(driver.exec(command, noop)).to.equal(command);
+      done();
+    });
+
+    it('should replace working paths with root in returned commands', function(done) {
+      var command = 'command /root/dir/a /root/dir/b /root/dir/c';
+      var execute = 'command /work/dir/a /work/dir/b /work/dir/c'
+      driver.working = '/work/dir';
+      expect(driver.exec(execute, noop)).to.equal(command);
+      done();
+    });
+
+    it('should yield childProcess.exec errors to the callback', function(done) {
+      var error = new Error('Some error');
+      childProcess.exec.yieldsAsync(error);
+      driver.exec('whatever', function (err) {
+        expect(err).to.equal(error);
+        done();
+      });
+    });
+  }); // end 'exec'
+
   describe('file system', function () {
     var driver;
 
@@ -190,7 +236,12 @@ describe('fs-driver', function () {
       it('should use the working directory when one is supplied', function(done) {
         var command = 'grep -rn \'search\' /working';
         driver.working = '/working';
-        expect(driver.grep('search', noop)).to.equal(command);
+        sinon.stub(driver, 'exec').yieldsAsync();
+        driver.grep('search', function (err) {
+          if (err) { return done(err); }
+          expect(driver.exec.calledWith(command)).to.be.true();
+          driver.exec.restore();
+        });
         done();
       });
     }); // end 'grep'

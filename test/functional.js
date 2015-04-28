@@ -211,6 +211,7 @@ describe('functional', function () {
       Transformer.transform(fs.path, rules, function (err, transformer) {
         if (err) { return done(err); }
         expect(transformer.results.length).to.equal(rules.length);
+        console.log(transformer.results);
         done();
       });
     });
