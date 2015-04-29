@@ -83,10 +83,9 @@ describe('fs-driver', function () {
   }); // end 'absolutePath'
 
   describe('exec', function () {
-    var driver;
+    var driver = new FsDriver('/root/dir');
 
     beforeEach(function (done) {
-      driver = new FsDriver('/root/dir');
       sinon.stub(childProcess, 'exec').yieldsAsync();
       done();
     });
@@ -104,18 +103,23 @@ describe('fs-driver', function () {
       });
     });
 
-    it('should return the command', function(done) {
-      var command = 'cp gnarly brah';
-      expect(driver.exec(command, noop)).to.equal(command);
-      done();
+    it('should provide the command in the callback', function(done) {
+      var expected = 'cp gnarly brah';
+      driver.exec(expected, function (err, output, command) {
+        expect(command).to.equal(expected);
+        done();
+      });
     });
 
     it('should replace working paths with root in returned commands', function(done) {
-      var command = 'command /root/dir/a /root/dir/b /root/dir/c';
+      var expected = 'command /root/dir/a /root/dir/b /root/dir/c';
       var execute = 'command /work/dir/a /work/dir/b /work/dir/c'
       driver.working = '/work/dir';
-      expect(driver.exec(execute, noop)).to.equal(command);
-      done();
+      driver.exec(execute, function (err, output, command) {
+        expect(command).to.equal(expected);
+        delete driver.working;
+        done();
+      });
     });
 
     it('should yield childProcess.exec errors to the callback', function(done) {
@@ -133,84 +137,34 @@ describe('fs-driver', function () {
 
     beforeEach(function (done) {
       driver = new FsDriver('/tmp');
-      sinon.stub(childProcess, 'exec').yieldsAsync();
+      sinon.stub(driver, 'exec').yieldsAsync();
       done();
     });
 
-    afterEach(function (done) {
-      childProcess.exec.restore();
-      done();
+    it('should use driver.exec to perform file moves', function (done) {
+      var command = "mv /tmp/foo /tmp/bar";
+      driver.move('foo', 'bar', function () {
+        expect(driver.exec.calledOnce).to.be.true();
+        expect(driver.exec.calledWith(command)).to.be.true();
+        done();
+      });
     });
 
-    describe('move', function() {
-      it('should return the move command', function(done) {
-        var command = "mv /tmp/foo /tmp/bar";
-        expect(driver.move('foo', 'bar', noop)).to.equal(command);
+    it('should use driver.exec to perform file copies', function(done) {
+      var command = "cp /tmp/foo /tmp/bar";
+      driver.copy('foo', 'bar', function () {
+        expect(driver.exec.calledOnce).to.be.true();
+        expect(driver.exec.calledWith(command)).to.be.true();
         done();
       });
-
-      it('should execute system `mv` when moving a file', function (done) {
-        var source = 'a.txt';
-        var dest = 'b.txt';
-        driver.move(source, dest, function (err) {
-          if (err) { return done(err); }
-          var command = 'mv /tmp/' + source + ' /tmp/' + dest;
-          expect(childProcess.exec.calledWith(command))
-            .to.be.true();
-          done();
-        });
-      });
-
-      it('should yield `exec` errors to the given callback', function (done) {
-        childProcess.exec.yields(new Error('Error'));
-        driver.move('foo', 'bar', function (err) {
-          expect(err).to.exist();
-          done();
-        });
-      });
-    }); // end 'move'
-
-    describe('copy', function() {
-      it('should return the copy command', function(done) {
-        var command = "cp /tmp/foo /tmp/bar";
-        expect(driver.copy('foo', 'bar', noop)).to.equal(command);
-        done();
-      });
-
-      it('should execute system `cp` when copying a file', function (done) {
-        var source = 'a.txt';
-        var dest = 'b.txt';
-        driver.copy(source, dest, function (err) {
-          if (err) { return done(err); }
-          var command = 'cp /tmp/' + source + ' /tmp/' + dest;
-          expect(childProcess.exec.calledWith(command))
-            .to.be.true();
-          done();
-        });
-      });
-
-      it('should yield `exec` errors to the given callback', function (done) {
-        childProcess.exec.yields(new Error('Error'));
-        driver.copy('foo', 'bar', function (err) {
-          expect(err).to.exist();
-          done();
-        });
-      });
-    }); // end 'copy'
+    });
 
     describe('grep', function() {
-      it('should return the grep command', function(done) {
+      it('should use driver.exec to perform the grep', function(done) {
         var command = 'grep -rn \'search\' /tmp';
-        expect(driver.grep('search', noop)).to.equal(command);
-        done();
-      });
-
-      it('should execute system `grep`', function (done) {
-        driver.grep('foo', function (err) {
-          if (err) { return done(err); }
-          var command = 'grep -rn \'foo\' /tmp';
-          expect(childProcess.exec.calledWith(command))
-            .to.be.true();
+        driver.grep('search', function () {
+          expect(driver.exec.calledOnce).to.be.true();
+          expect(driver.exec.calledWith(command)).to.be.true();
           done();
         });
       });
@@ -219,16 +173,8 @@ describe('fs-driver', function () {
         driver.grep('\\lambda\'', function (err) {
           if (err) { return done(err); }
           var command = 'grep -rn \'\\\\lambda\\\'\' /tmp';
-          expect(childProcess.exec.calledWith(command))
+          expect(driver.exec.calledWith(command))
             .to.be.true();
-          done();
-        });
-      });
-
-      it('should yield `exec` errors to the given callback', function (done) {
-        childProcess.exec.yields(new Error('Error'));
-        driver.grep('foo', function (err) {
-          expect(err).to.exist();
           done();
         });
       });
@@ -236,7 +182,6 @@ describe('fs-driver', function () {
       it('should use the working directory when one is supplied', function(done) {
         var command = 'grep -rn \'search\' /working';
         driver.working = '/working';
-        sinon.stub(driver, 'exec').yieldsAsync();
         driver.grep('search', function (err) {
           if (err) { return done(err); }
           expect(driver.exec.calledWith(command)).to.be.true();
@@ -247,19 +192,11 @@ describe('fs-driver', function () {
     }); // end 'grep'
 
     describe('sed', function() {
-      it('should return the correct sed command', function(done) {
-        var expected = 'sed -i.last \'1337s/bar/baz/g\' /tmp/file1.txt';
-        var actual = driver.sed('bar', 'baz', 'file1.txt', 1337, noop);
-        expect(actual).to.equal(expected);
-        done();
-      });
-
-      it('should execute system `sed`', function(done) {
-        driver.sed('foo', 'bar', 'example.txt', 20, function (err) {
-          if (err) { return done(err); }
-          var command = 'sed -i.last \'20s/foo/bar/g\' /tmp/example.txt';
-          expect(childProcess.exec.calledWith(command))
-            .to.be.true();
+      it('should use driver.exec to perform the sed', function(done) {
+        var command = 'sed -i.last \'1337s/bar/baz/g\' /tmp/file1.txt';
+        driver.sed('bar', 'baz', 'file1.txt', 1337, function () {
+          expect(driver.exec.calledOnce).to.be.true();
+          expect(driver.exec.calledWith(command)).to.be.true();
           done();
         });
       });
@@ -268,16 +205,8 @@ describe('fs-driver', function () {
         driver.sed('/foo', '/bar', 'example.txt', 17, function (err) {
           if (err) { return done(err); }
           var command = 'sed -i.last \'17s/\\/foo/\\/bar/g\' /tmp/example.txt';
-          expect(childProcess.exec.calledWith(command))
+          expect(driver.exec.calledWith(command))
             .to.be.true();
-          done();
-        });
-      });
-
-      it('should yield `exec` errors to the given callback', function(done) {
-        childProcess.exec.yields(new Error('Error'));
-        driver.sed('foo', 'bar', 'awesome.txt', 28, function (err) {
-          expect(err).to.exist();
           done();
         });
       });
@@ -305,18 +234,11 @@ describe('fs-driver', function () {
     }); // end 'exists'
 
     describe('diff', function() {
-      it('should return the correct diff command', function (done) {
-        var command = driver.diff('/tmp/a', '/tmp/b', function (err) {
-          if (err) { return done(err); }
-          expect(command).to.equal('diff -u -r /tmp/a /tmp/b');
-          done();
-        });
-      });
-
-      it('should execute system diff', function (done) {
+      it('should use driver.exec to perform the diff', function(done) {
+        var command = 'diff -u -r /tmp/a /tmp/b';
         driver.diff('/tmp/a', '/tmp/b', function (err) {
-          expect(childProcess.exec.calledWith('diff -u -r /tmp/a /tmp/b'))
-            .to.be.true();
+          expect(driver.exec.calledOnce).to.be.true();
+          expect(driver.exec.calledWith(command)).to.be.true();
           done();
         });
       });
@@ -324,7 +246,7 @@ describe('fs-driver', function () {
       it('should ignore errors with code 1 (indicated differences)', function (done) {
         var error = new Error('diff error');
         error.code = 1;
-        childProcess.exec.yields(error);
+        driver.exec.yields(error);
         driver.diff('a', 'b', function (err) {
           expect(err).to.be.null();
           done();
@@ -334,7 +256,7 @@ describe('fs-driver', function () {
       it('should yield errors with code > 1 to the given callback', function (done) {
         var error = new Error('diff error');
         error.code = 2;
-        childProcess.exec.yields(error);
+        driver.exec.yields(error);
         driver.diff('a', 'b', function (err) {
           expect(err).to.equal(error);
           done();
@@ -342,67 +264,45 @@ describe('fs-driver', function () {
       });
     }); // end 'diff'
 
-    describe('remove', function() {
-      it('should return the correct remove command', function(done) {
-        var command = 'rm /tmp/file1.txt';
-        expect(driver.remove('file1.txt', noop)).to.equal(command);
+    it('should use driver.exec to remove files', function(done) {
+      var command = 'rm /tmp/file1.txt';
+      driver.remove('file1.txt', function () {
+        expect(driver.exec.calledOnce).to.be.true();
+        expect(driver.exec.calledWith(command)).to.be.true();
         done();
       });
+    });
 
-      it('should execute system `rm`', function(done) {
-        driver.remove('file', function (err) {
-          if (err) { return done(err); }
-          expect(childProcess.exec.calledWith('rm /tmp/file')).to.be.true();
-          done();
-        });
-      });
-
-      it('should yield errors to the given callback', function(done) {
-        var error = new Error('Remove error');
-        childProcess.exec.yields(error);
-        driver.remove('file', function (err) {
-          expect(err).to.equal(error);
-          done();
-        });
-      });
-    }); // end 'remove'
-
-    describe('removeRecursive', function() {
-      it('should return the correct remove command', function(done) {
-        var command = 'rm -rf /tmp/file1/';
-        expect(driver.removeRecursive('file1/', noop)).to.equal(command);
+    it('should use driver.exec to recursively remove files', function(done) {
+      var command = 'rm -rf /tmp/dir/';
+      driver.removeRecursive('dir/', function () {
+        expect(driver.exec.calledOnce).to.be.true();
+        expect(driver.exec.calledWith(command)).to.be.true();
         done();
       });
-
-      it('should execute system `rm -rf`', function(done) {
-        driver.removeRecursive('file', function (err) {
-          if (err) { return done(err); }
-          expect(childProcess.exec.calledWith('rm -rf /tmp/file')).to.be.true();
-          done();
-        });
-      });
-
-      it('should yield errors to the given callback', function(done) {
-        var error = new Error('Remove error');
-        childProcess.exec.yields(error);
-        driver.removeRecursive('file', function (err) {
-          expect(err).to.equal(error);
-          done();
-        });
-      });
-    }); // end 'removeRecursive'
+    });
 
     describe('findWorkingDirectory', function() {
       beforeEach(function (done) {
         driver.root = '/etc/init.d';
         sinon.stub(driver, 'exists');
+        sinon.stub(Math, 'random')
+          .onFirstCall().returns(0)
+          .onSecondCall().returns(1)
+          .onThirdCall().returns(2);
+        done();
+      });
+
+      afterEach(function (done) {
+        Math.random.restore();
         done();
       });
 
       it('should find a new working directory', function(done) {
         driver.exists.returns(false);
-        expect(driver.findWorkingDirectory())
-          .to.equal('/tmp/.init.d.fs-work.0');
+        var working = driver.findWorkingDirectory();
+        expect(Math.random.calledOnce).to.be.true();
+        expect(working).to.equal('/tmp/.init.d.fs-work.0');
         done();
       });
 
@@ -420,17 +320,17 @@ describe('fs-driver', function () {
     describe('createWorkingDirectory', function() {
       beforeEach(function (done) {
         driver.root = '/etc/init.d';
-        sinon.stub(driver, 'exists');
+        sinon.stub(driver, 'exists').returns(false);
+        sinon.stub(Math, 'random').returns(0);
         done();
       });
 
       afterEach(function (done) {
-        driver.exists.restore();
+        Math.random.restore();
         done();
       });
 
-      it('should create a new working directory', function(done) {
-        driver.exists.returns(false);
+      it('should set the working directory', function(done) {
         driver.createWorkingDirectory(function (err) {
           if (err) { return done(err); }
           expect(driver.working).to.equal('/tmp/.init.d.fs-work.0');
@@ -438,19 +338,18 @@ describe('fs-driver', function () {
         });
       });
 
-      it('should execute system cp -r to copy the working directory', function(done) {
+      it('should create the working directory with driver.exec', function (done) {
         var command = 'cp -r /etc/init.d /tmp/.init.d.fs-work.0';
-        driver.exists.returns(false);
         driver.createWorkingDirectory(function (err) {
           if (err) { return done(err); }
-          expect(childProcess.exec.calledWith(command)).to.be.true();
+          expect(driver.exec.calledWith(command)).to.be.true();
           done();
         });
       });
 
       it('should yield system errors to the supplied callback', function(done) {
         var error = new Error('Errorz');
-        childProcess.exec.yields(error);
+        driver.exec.yields(error);
         driver.createWorkingDirectory(function (err) {
           expect(err).to.equal(error);
           done();
@@ -459,13 +358,21 @@ describe('fs-driver', function () {
     }); // end 'createWorkingDirectory'
 
     describe('removeWorkingDirectory', function() {
+      beforeEach(function (done) {
+        sinon.stub(driver, 'removeRecursive').yieldsAsync();
+        done();
+      });
+
+      afterEach(function (done) {
+        driver.removeRecursive.restore();
+        done();
+      });
+
       it('should remove the working directory', function(done) {
-        var removeRecursive = sinon.stub(driver, 'removeRecursive')
-          .yieldsAsync();
         driver.working = '/tmp/x';
         driver.removeWorkingDirectory(function (err) {
           if (err) { return done(err); }
-          expect(removeRecursive.calledWith('/tmp/x')).to.be.true();
+          expect(driver.removeRecursive.calledWith('/tmp/x')).to.be.true();
           expect(driver.working).to.be.null();
           done();
         });
@@ -475,14 +382,14 @@ describe('fs-driver', function () {
         driver.working = null;
         driver.removeWorkingDirectory(function (err) {
           if (err) { return done(err); }
-          expect(childProcess.exec.callCount).to.equal(0);
+          expect(driver.removeRecursive.callCount).to.equal(0);
           done();
         });
       });
 
       it('should yield system errors to the supplied callback', function(done) {
         var error = new Error('Remove error');
-        childProcess.exec.yields(error);
+        driver.removeRecursive.yields(error);
         driver.working = '/woot/sauce';
         driver.removeWorkingDirectory(function (err) {
           expect(err).to.equal(error);

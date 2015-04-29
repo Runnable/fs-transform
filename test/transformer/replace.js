@@ -264,8 +264,7 @@ describe('Transformer', function() {
       var saveCommand = sinon.spy(transformer, 'saveCommand');
 
       sinon.stub(transformer.driver, 'sed')
-        .returns(command)
-        .yieldsAsync();
+        .yieldsAsync(null, null, command);
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'diff').yields();
