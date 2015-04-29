@@ -1,6 +1,6 @@
 'use strict';
 
-var Transformer = require('transformer.js');
+var Transformer = require('./lib/transformer.js');
 
 /**
  * @module fs-transform

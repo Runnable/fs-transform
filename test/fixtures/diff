@@ -1,0 +1,28 @@
+diff -u -r $ROOT/A $WORK/A
+--- $ROOT/A	2015-04-27 17:59:29.000000000 -0700
++++ $WORK/A	2015-04-27 17:59:29.000000000 -0700
+@@ -4,4 +4,4 @@
+ Exampel
+ Interesting
+
+-/some/path/foo
++/path/"bar"
+diff -u -r $ROOT/sub/C $WORK/sub/C
+--- $ROOT/sub/C	2015-04-27 17:59:29.000000000 -0700
++++ $WORK/sub/C	2015-04-27 17:59:29.000000000 -0700
+@@ -1,5 +1,5 @@
+ File C
+-\sum_{i=10}^{100} i^2
++\prod_{i=10}^{100} i^2
+
+ Mew
+ Mew
+diff -u -r $ROOT/sub/subsub/D $WORK/sub/subsub/D
+--- $ROOT/sub/subsub/D	2015-04-27 17:59:29.000000000 -0700
++++ $WORK/sub/subsub/D	2015-04-27 17:59:29.000000000 -0700
+@@ -4,4 +4,4 @@
+ File B is good
+ Neato
+
+-"cool"
++"neat"
