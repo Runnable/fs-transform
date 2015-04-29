@@ -44,21 +44,39 @@ describe('Transformer', function() {
     beforeEach(function (done) {
       transformer = new Transformer('/etc', [1, 2, 3]);
       sinon.stub(transformer, 'applyRule').yieldsAsync();
-      sinon.stub(transformer.driver, 'createWorkingDirectory').yieldsAsync();
-      sinon.stub(transformer.driver, 'removeWorkingDirectory').yieldsAsync();
-      sinon.stub(transformer.driver, 'diff').yieldsAsync();
-      sinon.stub(transformer.driver, 'move').yieldsAsync();
-      sinon.stub(transformer.driver, 'removeRecursive').yieldsAsync();
-      sinon.stub(transformer.driver, 'workingDiff').yieldsAsync();
+
+      var driverMethods = [
+        'createWorkingDirectory',
+        'removeWorkingDirectory',
+        'diff',
+        'move',
+        'removeRecursive',
+        'workingDiff',
+        'hasAllCommands',
+        'hasCommand'
+      ];
+
+      driverMethods.forEach(function (method) {
+        sinon.stub(transformer.driver, method).yieldsAsync();
+      });
+
       driver = transformer.driver;
       driver.working = '/tmp/working';
       done();
     });
 
+    it('should check for all required commands', function (done) {
+      transformer._execute(false, function (err) {
+        if (err) { return done(err); }
+        expect(driver.hasAllCommands.calledOnce).to.be.true();
+        done();
+      });
+    });
+
     it('should create a working directory', function(done) {
       transformer._execute(false, function (err) {
         if (err) { return done(err); }
-        expect(driver.createWorkingDirectory.callCount).to.equal(1);
+        expect(driver.createWorkingDirectory.calledOnce).to.be.true();
         done();
       });
     });

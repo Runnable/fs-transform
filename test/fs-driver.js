@@ -141,6 +141,26 @@ describe('fs-driver', function () {
       done();
     });
 
+    it('should check for commands using driver.exec', function(done) {
+      driver.hasCommand('foo', function () {
+        expect(driver.exec.calledOnce).to.be.true();
+        expect(driver.exec.calledWith('command -v foo')).to.be.true();
+        done();
+      });
+    });
+
+    it('should check for all commands using driver.exec', function(done) {
+      sinon.stub(driver, 'hasCommand').yieldsAsync();
+      driver.hasAllCommands(function () {
+        expect(driver.hasCommand.callCount).to.equal(FsDriver.commands.length);
+        FsDriver.commands.forEach(function (name) {
+          expect(driver.hasCommand.calledWith(name)).to.be.true();
+        });
+        driver.hasCommand.restore();
+        done();
+      });
+    });
+
     it('should use driver.exec to perform file moves', function (done) {
       var command = "mv /tmp/foo /tmp/bar";
       driver.move('foo', 'bar', function () {
