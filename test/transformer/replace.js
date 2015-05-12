@@ -159,6 +159,34 @@ describe('Transformer', function() {
       });
     });
 
+    it('should apply global file excludes', function(done) {
+      var rule = { search: 'koopa', replace: 'mario' };
+      transformer.exclude({ files: ['file2.txt', 'file4.txt'] }, noop);
+
+      var sed = sinon.stub(transformer.driver, 'sed').yields();
+      sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'diff').yields();
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        '/etc/file1.txt:23:---',
+        '/etc/file2.txt:78:---',
+        '/etc/file3.txt:182:---',
+        '/etc/file4.txt:3232:---',
+        '/etc/suhweet/file4.txt:7:---'
+      ].join('\n'));
+
+      transformer.replace(rule, function (err) {
+        expect(sed.callCount).to.equal(3);
+        expect(sed.calledWith('koopa', 'mario', '/etc/file1.txt', 23))
+          .to.be.true();
+        expect(sed.calledWith('koopa', 'mario', '/etc/file3.txt', 182))
+          .to.be.true();
+        expect(sed.calledWith('koopa', 'mario', '/etc/suhweet/file4.txt', 7))
+          .to.be.true();
+        done();
+      });
+    });
+
     it('should appropriately apply exclude filters', function(done) {
       var rule = {
         search: 'a',

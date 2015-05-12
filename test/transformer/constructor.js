@@ -62,5 +62,11 @@ describe('Transformer', function() {
       expect(transformer.nameChanges).to.be.an.array();
       done();
     });
+
+    it('should keep a list of global file excludes', function(done) {
+      var transformer = new Transformer('/etc', []);
+      expect(transformer._globalExcludes).to.be.an.array();
+      done();
+    });
   }); // end 'constructor'
 });
