@@ -30,16 +30,16 @@
   },
   "homepage": "https://github.com/rsandor/fs-transform",
   "dependencies": {
-    "101": "^0.16.1",
+    "101": "^0.18.0",
     "async": "^0.9.0",
-    "debug": "^2.1.3",
+    "debug": "^2.2.0",
     "diff": "^1.3.2"
   },
   "devDependencies": {
     "callback-count": "^0.1.0",
     "code": "^1.4.0",
     "jsdoc": "^3.3.0",
-    "jshint": "^2.6.3",
+    "jshint": "^2.7.0",
     "lab": "^5.8.0",
     "sinon": "^1.14.1"
   }

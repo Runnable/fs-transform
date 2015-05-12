@@ -1,8 +1,8 @@
 # fs-transform
 
 ![Build Status](https://travis-ci.org/Runnable/fs-transform.svg?branch=master)
-![Dependency Status](https://david-dm.org/Runnable/fs-transform.svg)
-![devDependency Status](https://david-dm.org/Runnable/fs-transform/dev-status.svg)
+[![Dependency Status](https://david-dm.org/Runnable/fs-transform.svg)](https://david-dm.org/runnable/fs-transform#info=dependencies&view=table)
+[![devDependency Status](https://david-dm.org/Runnable/fs-transform/dev-status.svg)](https://david-dm.org/runnable/fs-transform#info=devDependencies&view=table)
 
 [![NPM](https://nodei.co/npm/fs-transform.png?compact=true)](https://nodei.co/npm/fs-transform)
 
