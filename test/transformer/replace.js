@@ -254,61 +254,6 @@ describe('Transformer', function() {
       });
     });
 
-    it('should save each sed command', function(done) {
-      var rule = {
-        action: 'replace',
-        search: 'alpha',
-        replace: 'beta'
-      };
-      var command = 'sed -i "" "s/alpha/beta/" file.txt';
-      var saveCommand = sinon.spy(transformer, 'saveCommand');
-
-      sinon.stub(transformer.driver, 'sed')
-        .yieldsAsync(null, null, command);
-      sinon.stub(transformer.driver, 'copy').yields();
-      sinon.stub(transformer.driver, 'remove').yields();
-      sinon.stub(transformer.driver, 'diff').yields();
-      sinon.stub(transformer.driver, 'grep').yields(null, [
-        '/etc/file.txt:10:---',
-        '/etc/file.txt:12:---',
-        '/etc/file.txt:14:---'
-      ].join('\n'));
-
-      transformer.replace(rule, function (err) {
-        if (err) { return done(err); }
-        expect(saveCommand.callCount).to.equal(3);
-        expect(saveCommand.calledWith(command)).to.be.true();
-        done();
-      });
-    });
-
-    it('should not save a command if an error occurred', function(done) {
-      var rule = {
-        action: 'replace',
-        search: 'alpha',
-        replace: 'beta'
-      };
-
-      var saveCommand = sinon.spy(transformer, 'saveCommand');
-
-      sinon.stub(transformer.driver, 'copy').yields();
-      sinon.stub(transformer.driver, 'remove').yields();
-      sinon.stub(transformer.driver, 'diff').yields();
-      sinon.stub(transformer.driver, 'sed')
-        .returns('command')
-        .yieldsAsync(new Error('Error'));
-      sinon.stub(transformer.driver, 'grep').yields(null, [
-        '/etc/file.txt:10:---',
-        '/etc/file.txt:12:---',
-        '/etc/file.txt:14:---'
-      ].join('\n'))
-
-      transformer.replace(rule, function () {
-        expect(saveCommand.callCount).to.equal(0);
-        done();
-      });
-    });
-
     it('should make an original copy for each changed file', function (done) {
       var rule = {
         action: 'replace',

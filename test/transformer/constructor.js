@@ -1,3 +1,5 @@
+'use strict';
+
 var Lab = require('lab');
 var lab = exports.lab = Lab.script();
 var describe = lab.describe;
@@ -9,6 +11,7 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 var Transformer = require('../../lib/transformer');
+var ScriptGenerator = require('../../lib/script-generator');
 
 describe('Transformer', function() {
   describe('constructor', function() {
@@ -51,9 +54,9 @@ describe('Transformer', function() {
       done();
     });
 
-    it('should keep a list of commands', function (done) {
+    it('should have a shell script generator', function(done) {
       var transformer = new Transformer('/etc', []);
-      expect(transformer.commands).to.be.an.array();
+      expect(transformer.scriptGenerator).instanceof(ScriptGenerator);
       done();
     });
 
