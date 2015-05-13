@@ -2,7 +2,8 @@
 # {
 #   action: replace,
 #   search: "absolutely",
-#   replace: "probably"# }
+#   replace: "probably"
+# }
 
 results=($(grep -rl 'absolutely' $search_files))
 excludes=""
