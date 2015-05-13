@@ -6,14 +6,16 @@
 #   excludes: [A.dmg, B.tar.gz]
 # }
 
-results=$(grep -rL 'whut' $search_files)
+results=($(grep -rl 'whut' $search_files))
 excludes="A.dmg B.tar.gz"
-if $results; then
-  for name in $results do
+if ((${#results[@]} > 0)); then
+  for name in $results
+  do
     if [[ ! $excludes =~ $name ]]; then
       sed -i.last 's/whut/wat/g' $name || {
         warning "Rule 55: could not replace 'whut' with 'wat' in $name"
       }
+      rm -f $name.last
     fi
   done
 else

@@ -6,8 +6,8 @@
 
 _script_name=`basename $0`
 search_files='.'
-warning() { echo "($_script_name) \e[1;93mWARNING\e[0m " $1; }
-error() { echo "($_script_name) \e[1;91mERROR\e[0m " $1; exit 1; }
+warning() { echo "($_script_name) WARNING" $1; }
+error() { echo "($_script_name) ERROR" $1; exit 1; }
 
 command -v cp >/dev/null 2>&1 || {
   error "Missing required command: cp";
@@ -34,14 +34,16 @@ command -v rm >/dev/null 2>&1 || {
 #   search: "\sum",
 #   replace: "\prod"# }
 
-results=$(grep -rL '\\sum' $search_files)
+results=($(grep -rl '\\sum' $search_files))
 excludes=""
-if $results; then
-  for name in $results do
+if ((${#results[@]} > 0)); then
+  for name in $results
+  do
     if [[ ! $excludes =~ $name ]]; then
       sed -i.last 's/\\sum/\\prod/g' $name || {
         warning "Rule 0: could not replace '\\sum' with '\\prod' in $name"
       }
+      rm -f $name.last
     fi
   done
 else

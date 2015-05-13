@@ -6,8 +6,8 @@
 
 _script_name=`basename $0`
 search_files='.'
-warning() { echo "($_script_name) \e[1;93mWARNING\e[0m " $1; }
-error() { echo "($_script_name) \e[1;91mERROR\e[0m " $1; exit 1; }
+warning() { echo "($_script_name) WARNING" $1; }
+error() { echo "($_script_name) ERROR" $1; exit 1; }
 
 command -v cp >/dev/null 2>&1 || {
   error "Missing required command: cp";
