@@ -164,10 +164,9 @@ describe('Transformer', function() {
         search: 'a',
         replace: 'b',
         exclude: [
-          { name: 'file1.txt' },
-          { name: 'file2.txt', line: 22 },
-          { name: 'not-there.txt' },
-          { } // malformed excludes should be ignored
+          'file1.txt',
+          'file2.txt',
+          'not-there.txt'
         ]
       };
 
@@ -183,8 +182,7 @@ describe('Transformer', function() {
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
-        expect(sed.callCount).to.equal(2);
-        expect(sed.calledWith('a', 'b', '/etc/file2.txt', 78)).to.be.true();
+        expect(sed.callCount).to.equal(1);
         expect(sed.calledWith('a', 'b', '/etc/file3.txt', 182)).to.be.true();
         done();
       });
@@ -195,10 +193,9 @@ describe('Transformer', function() {
         search: 'a',
         replace: 'b',
         exclude: [
-          { name: 'applied.txt' },
-          { name: 'not-applied.txt' },
-          { name: 'file1.txt', line: 50 }, // applied
-          { name: 'file1.txt', line: 17 }  // not applied
+          'applied.txt',
+          'not-there',
+          'file1.txt'
         ]
       };
 
@@ -215,11 +212,9 @@ describe('Transformer', function() {
       transformer.replace(rule, function (err) {
         if (err) { return done(err); }
         var warnings = transformer.warnings;
-        expect(warnings.length).to.equal(2);
+        expect(warnings.length).to.equal(1);
         expect(warnings[0].rule).to.equal(rule.exclude[1]);
         expect(warnings[0].message).to.equal('Unused exclude.')
-        expect(warnings[1].rule).to.equal(rule.exclude[3]);
-        expect(warnings[1].message).to.equal('Unused exclude.')
         done();
       });
     });
@@ -228,9 +223,7 @@ describe('Transformer', function() {
       var rule = {
         search: 'a',
         replace: 'b',
-        exclude: [
-          { name: 'file1.txt' }
-        ]
+        exclude: ['file1.txt']
       };
 
       var sed = sinon.stub(transformer.driver, 'sed').yields();

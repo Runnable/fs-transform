@@ -155,9 +155,8 @@ describe('functional', function () {
         search: 'Mew',
         replace: 'Woof',
         exclude: [
-          { name: 'B' },
-          { name: 'sub/C', line: 8 },
-          { name: 'not-there' }
+          'B',
+          'not-there'
         ]
       }];
       Transformer.transform(fs.path, rules, function (err, transformer) {
@@ -167,7 +166,7 @@ describe('functional', function () {
         expect(linesC[3]).to.equal('Woof');
         expect(linesC[4]).to.equal('Woof');
         expect(linesC[5]).to.equal('Woof');
-        expect(linesC[7]).to.equal('Mew');
+        expect(linesC[7]).to.equal('Woof');
         expect(dataB.match('Woof')).to.be.null();
         expect(transformer.warnings).to.not.be.empty();
         expect(transformer.warnings[0].message)
@@ -183,7 +182,7 @@ describe('functional', function () {
         action: 'replace',
         search: search,
         replace: replace,
-        exclude: [{ name: 'A' }]
+        exclude: ['A']
       }];
       Transformer.transform(fs.path, rules, function (err, transformer) {
         if (err) { return done(err); }

@@ -40,20 +40,11 @@ var rules = [
     search: 'foo',
     replace: 'bar',
 
-    // Use `exclude` property to define a set of files / lines to exclude
-    // from the global replace.
+    // Use `exclude` property to define a set of files to exclude for this
+    // search and replace
     exclude: [
-      {
-        name: 'another/file',
-        line: 22
-      },
-      {
-        name: 'complex/file',
-        lines: [12, 17, 94]
-      },
-      {
-        name: 'a/dir/'
-      }
+      'another/file',
+      'a/dir/'
     ]
   }
 ];
