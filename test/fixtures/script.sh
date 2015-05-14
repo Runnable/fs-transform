@@ -32,7 +32,8 @@ command -v rm >/dev/null 2>&1 || {
 # {
 #   action: replace,
 #   search: "\sum",
-#   replace: "\prod"# }
+#   replace: "\prod"
+# }
 
 results=($(grep -rl '\\sum' $search_files))
 excludes=""
