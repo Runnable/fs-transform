@@ -106,24 +106,18 @@ describe('Transformer', function() {
       });
     });
 
-    it('should save the copy command', function(done) {
-      var rule = { source: 'foo', dest: 'bar' };
-      var spy = sinon.spy(transformer, 'saveCommand');
-      sinon.stub(transformer.driver, 'exists').returns(true);
-      transformer.copy(rule, function () {
-        expect(spy.calledOnce).to.be.true();
-        transformer.driver.exists.restore();
-        done();
-      });
-    });
+    it('should handle driver copy errors', function(done) {
+      var error = new Error('FOOL! foOOl.. fool?');
+      transformer.driver.copy.yieldsAsync(error);
 
-    it('should not save the copy command if an error occurred', function (done) {
-      var rule = { source: 'foo', dest: 'bar' };
-      var spy = sinon.spy(transformer, 'saveCommand');
-      sinon.stub(transformer.driver, 'exists').returns(true);
-      transformer.driver.copy.yields(new Error('error'));
+      sinon.stub(transformer.driver, 'exists')
+        .withArgs('foo').returns(true)
+        .withArgs('bar').returns(false);
+
+      var rule = { action: 'copy', source: 'foo', dest: 'bar'};
       transformer.copy(rule, function (err) {
-        expect(spy.callCount).to.equal(0);
+        expect(err).to.equal(error);
+        transformer.driver.exists.restore();
         done();
       });
     });

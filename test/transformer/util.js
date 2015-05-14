@@ -27,8 +27,6 @@ describe('Transformer', function() {
       expect(transformer.results).to.not.be.empty();
       var result = transformer.results[0];
       expect(result.rule).to.equal(rule);
-      expect(result.commands).to.be.an.array();
-      expect(result.commands).to.be.empty();
       expect(result.warnings).to.be.an.array();
       expect(result.warnings).to.be.empty();
       expect(result.nameChanges).to.be.an.array();
@@ -153,25 +151,12 @@ describe('Transformer', function() {
   }); // end 'setAction & getAction'
 
   describe('getScript', function() {
-    it('should return a correctly composed shellscript', function(done) {
-      var ruleOne = { action: 'copy', source: 'foo', dest: 'bar' };
-      var commandOne = 'cp /etc/foo /etc/bar';
-      var ruleTwo = { action: 'replace', search: 'a', replace: 'b' };
-      var commandTwo = 'sed -i "" "22s/a/b/g" bar';
-
+    it('should use the ScriptGenerator class to generate scripts', function(done) {
       var transformer = new Transformer('/etc', []);
-      transformer.saveCommand(commandOne, ruleOne);
-      transformer.saveCommand(commandTwo, ruleTwo);
-
-      var script = transformer.getScript();
-
-      expect(script).to.be.a.string();
-      expect(script.indexOf('#!/bin/sh')).to.equal(0);
-      expect(script.indexOf(commandOne)).to.be.above(-1);
-      expect(script.indexOf(commandTwo)).to.be.above(-1);
-      expect(script.indexOf(JSON.stringify(ruleOne))).to.be.above(-1);
-      expect(script.indexOf(JSON.stringify(ruleTwo))).to.be.above(-1);
-
+      var result = 'anbksnklnsskqlnskal2202';
+      sinon.stub(transformer.scriptGenerator, 'generate').returns(result);
+      expect(transformer.getScript()).to.equal(result);
+      expect(transformer.scriptGenerator.generate.calledOnce).to.be.true();
       done();
     });
   }); // end 'getScript'
