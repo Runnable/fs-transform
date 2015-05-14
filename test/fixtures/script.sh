@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Warning: this is a generated file, modifications may be overwritten.

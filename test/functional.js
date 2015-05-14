@@ -247,7 +247,7 @@ describe('functional', function () {
         },
 
         function runScript(next) {
-          var command = 'sh ../script.sh';
+          var command = 'bash ../script.sh';
           childProcess.exec(command, {cwd: scriptPath}, function (err, data) {
             next(err);
           });
