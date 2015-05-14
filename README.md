@@ -40,20 +40,11 @@ var rules = [
     search: 'foo',
     replace: 'bar',
 
-    // Use `exclude` property to define a set of files / lines to exclude
-    // from the global replace.
+    // Use `exclude` property to define a set of files to exclude for this
+    // search and replace
     exclude: [
-      {
-        name: 'another/file',
-        line: 22
-      },
-      {
-        name: 'complex/file',
-        lines: [12, 17, 94]
-      },
-      {
-        name: 'a/dir/'
-      }
+      'another/file',
+      'a/dir/'
     ]
   }
 ];
@@ -146,7 +137,6 @@ warnings. The warnings, in order of precedence, are:
 * `'All results were excluded.'` - The given set of excludes ended up removing
   all of the files from the search results.
 
-
 ## Dry Runs
 `fs-transform` performs all of its work in a temporary directory so it can
 gracefully fail if an error occurs (leaving the root directory as it was before
@@ -173,39 +163,8 @@ successfully, the `Transform` class will keep track of that command and which
 rule generated it (via the `.saveCommand` method).
 
 Once the transformation is complete, you can call the `.getScript` method to
-get all the commands as an executable shell script. Here's an example:
-
-```js
-var rules = [
-  { action: 'copy', source: 'foo', dest: 'bar' },
-  { action: 'replace', search: 'Socrates', replace: 'Plato' }
-]
-Transformer.transform('/tmp', rules, function (err, transformer) {
-  // Get the shell script:
-  var script = transformer.getScript();
-});
-```
-
-The script would look something like this:
-```sh
-#!/bin/sh
-
-#
-# Warning: this is a generated file, modifications may be overwritten.
-#
-
-# from rule: {action:"copy",source:"foo",dest:"bar"}
-cp /tmp/foo /tmp/bar
-
-# from rule: {action:"replace",search:"Socrates",replace:"Plato"}
-sed -i "" "13s/Socrates/Plato/g" /tmp/bar
-
-# from rule: {action:"replace",search:"Socrates",replace:"Plato"}
-sed -i "" "93s/Socrates/Plato/g" /tmp/bar
-
-# from rule: {action:"replace",search:"Socrates",replace:"Plato"}
-sed -i "" "4761s/Socrates/Plato/g" /tmp/bar
-```
+get all the commands as an executable shell script. For an example of the output
+script see [the test script](https://github.com/Runnable/fs-transform/blob/master/test/fixtures/script.sh).
 
 ## Generating Diffs
 `fs-transform` allows you to get a full recursive diff between the root

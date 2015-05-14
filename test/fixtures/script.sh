@@ -1,26 +1,85 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Warning: this is a generated file, modifications may be overwritten.
 #
 
-# Check to ensure required commands are available
-command -v cp >/dev/null 2>&1 || { echo "Required command: cp -- Please install it before running this script."; exit 1; }
-command -v mv >/dev/null 2>&1 || { echo "Required command: mv -- Please install it before running this script."; exit 1; }
-command -v grep >/dev/null 2>&1 || { echo "Required command: grep -- Please install it before running this script."; exit 1; }
-command -v sed >/dev/null 2>&1 || { echo "Required command: sed -- Please install it before running this script."; exit 1; }
-command -v diff >/dev/null 2>&1 || { echo "Required command: diff -- Please install it before running this script."; exit 1; }
-command -v rm >/dev/null 2>&1 || { echo "Required command: rm -- Please install it before running this script."; exit 1; }
-# END Required command check
+_script_name=`basename $0`
+search_files='.'
+warning() { echo "($_script_name) WARNING" $1; }
+error() { echo "($_script_name) ERROR" $1; exit 1; }
 
-# from rule: {"action":"replace","search":"\\sum","replace":"\\prod"}
-sed -i.last '2s/\\sum/\\prod/g' $ROOT/sub/C
+command -v cp >/dev/null 2>&1 || {
+  error "Missing required command: cp";
+}
+command -v mv >/dev/null 2>&1 || {
+  error "Missing required command: mv";
+}
+command -v grep >/dev/null 2>&1 || {
+  error "Missing required command: grep";
+}
+command -v sed >/dev/null 2>&1 || {
+  error "Missing required command: sed";
+}
+command -v diff >/dev/null 2>&1 || {
+  error "Missing required command: diff";
+}
+command -v rm >/dev/null 2>&1 || {
+  error "Missing required command: rm";
+}
 
-# from rule: {"action":"copy","source":"A","dest":"A-copy"}
-cp $ROOT/A $ROOT/A-copy
+# RULE 0
+# {
+#   action: replace,
+#   search: "\sum",
+#   replace: "\prod"
+# }
 
-# from rule: {"action":"copy","source":"B","dest":"B-copy"}
-cp $ROOT/B $ROOT/B-copy
+results=($(grep -rl '\\sum' $search_files))
+excludes=""
+if ((${#results[@]} > 0)); then
+  for name in $results
+  do
+    if [[ ! $excludes =~ $name ]]; then
+      sed -i.last 's/\\sum/\\prod/g' $name || {
+        warning "Rule 0: could not replace '\\sum' with '\\prod' in $name"
+      }
+      rm -f $name.last
+    fi
+  done
+else
+  warning "Rule 0: no search results to replace."
+fi
 
-# from rule: {"action":"rename","source":"sub/C","dest":"sub/C-rename"}
-mv $ROOT/sub/C $ROOT/sub/C-rename
+# RULE 1
+# {
+#   action: "copy",
+#   source: "A",
+#   dest: "A-copy"
+# }
+
+cp A A-copy || {
+  warning "Rule 1: unable to copy A to A-copy"
+}
+
+# RULE 2
+# {
+#   action: "copy",
+#   source: "B",
+#   dest: "B-copy"
+# }
+
+cp B B-copy || {
+  warning "Rule 2: unable to copy B to B-copy"
+}
+
+# RULE 3
+# {
+#   action: "rename",
+#   source: "sub/C",
+#   dest: "sub/C-rename"
+# }
+
+mv sub/C sub/C-rename || {
+  warning "Rule 3: unable to rename sub/C to sub/C-rename"
+}
