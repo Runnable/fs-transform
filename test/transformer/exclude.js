@@ -15,7 +15,7 @@ describe('Transformer', function() {
 
     beforeEach(function (done) {
       transformer = new Transformer('/etc', []);
-      sinon.stub(transformer, 'addWarning');
+      sinon.spy(transformer, 'addWarning');
       done();
     });
 
