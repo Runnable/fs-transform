@@ -33,7 +33,13 @@ var rules = [
     dest: 'dest/file'
   },
 
-  // 2.3 Search and Replace in Files
+  // 2.3 Exclude files from all subsequent searches
+  {
+    action: 'exclude',
+    files: ['A.txt', 'B.dmg']
+  },
+
+  // 2.4 Search and Replace in Files
   //     Note: this is applied globally to all files in the root directory
   {
     action: 'replace',

@@ -212,6 +212,18 @@ describe('Transformer', function() {
       });
     });
 
+    it('should call the `exclude` handler given an "exclude" rule action', function(done) {
+      var rule = { action: 'exclude' };
+      var stub = sinon.stub(transformer._ruleActions, 'exclude').yields();
+      transformer.applyRule(rule, function (err) {
+        if (err) { return done(err); }
+        expect(stub.calledOnce).to.be.true();
+        expect(stub.calledWith(rule)).to.be.true();
+        transformer._ruleActions.exclude.restore();
+        done();
+      });
+    });
+
     it('should call a custom handler when given a custom rule action', function (done) {
       var rule = { action: 'custom' };
       var spy = sinon.stub(transformer._ruleActions, 'custom').yields();
