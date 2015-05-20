@@ -255,6 +255,7 @@ describe('fs-driver', function () {
 
     describe('diff', function() {
       it('should use driver.exec to perform the diff', function(done) {
+        driver.exec.yieldsAsync(null, 'diff', 'command');
         var command = 'diff -u -r /tmp/a /tmp/b';
         driver.diff('/tmp/a', '/tmp/b', function (err) {
           expect(driver.exec.calledOnce).to.be.true();
@@ -266,7 +267,7 @@ describe('fs-driver', function () {
       it('should ignore errors with code 1 (indicated differences)', function (done) {
         var error = new Error('diff error');
         error.code = 1;
-        driver.exec.yields(error);
+        driver.exec.yields(error, 'diff', 'command');
         driver.diff('a', 'b', function (err) {
           expect(err).to.be.null();
           done();
@@ -282,7 +283,27 @@ describe('fs-driver', function () {
           done();
         });
       });
+
+      it('should make paths relative to the repository root', function(done) {
+        var absoluteDiff = driver.working + '\n' + driver.root + '\n';
+        driver.exec.yieldsAsync(null, absoluteDiff, 'command');
+        driver.diff('a', 'b', function (err, diff) {
+          expect(diff.indexOf(driver.working)).to.equal(-1);
+          expect(diff.indexOf(driver.root)).to.equal(-1);
+          done();
+        });
+      });
     }); // end 'diff'
+
+    it('should call `diff` when computing the `workingDiff`', function(done) {
+      sinon.stub(driver, 'diff').yieldsAsync();
+      driver.workingDiff(function (err, result) {
+        if (err) { return done(err); }
+        expect(driver.diff.calledWith(driver.root, driver.working))
+          .to.be.true();
+        done();
+      })
+    });
 
     it('should use driver.exec to remove files', function(done) {
       var command = 'rm /tmp/file1.txt';
