@@ -267,7 +267,7 @@ describe('fs-driver', function () {
       it('should ignore errors with code 1 (indicated differences)', function (done) {
         var error = new Error('diff error');
         error.code = 1;
-        driver.exec.yields(error, 'diff', 'command');
+        driver.exec.yieldsAsync(error, 'diff', 'command');
         driver.diff('a', 'b', function (err) {
           expect(err).to.be.null();
           done();
