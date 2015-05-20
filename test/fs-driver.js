@@ -284,7 +284,7 @@ describe('fs-driver', function () {
         });
       });
 
-      it('should make paths relative to the repository root', function(done) {
+      it('should have paths that are relative to the root directory', function(done) {
         var absoluteDiff = driver.working + '\n' + driver.root + '\n';
         driver.exec.yieldsAsync(null, absoluteDiff, 'command');
         driver.diff('a', 'b', function (err, diff) {
