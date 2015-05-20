@@ -22,6 +22,7 @@ var testPath = path.resolve(__dirname, 'test');
  */
 module.exports = {
   path: testPath,
+  mock: mockPath,
   createTestDir: createTestDir,
   removeTestDir: removeTestDir,
   exists: exists,

@@ -232,45 +232,47 @@ describe('functional', function () {
       });
     });
 
-    it('should provide a shell script correctly transforms', function(done) {
-      var rules = [
-        { action: 'replace', search: '\\sum', replace: '\\prod' },
-        { action: 'copy', source: 'A', dest: 'A-copy' },
-        { action: 'copy', source: 'B', dest: 'B-copy' },
-        { action: 'rename', source: 'sub/C', dest: 'sub/C-rename' }
-      ];
-      var scriptPath = fs.path + '.script';
+    describe('scripts', function() {
+      var scriptPath = fs.mock + '.script';
 
-      async.series([
-        function setupTestDirCopy(next) {
-          childProcess.exec('cp -r ' + fs.path + ' ' + scriptPath, next);
-        },
+      before(function (done) {
+        childProcess.exec('cp -r ' + fs.mock + ' ' + scriptPath, done);
+      });
 
-        function runScript(next) {
-          var command = 'bash ../script.sh';
-          childProcess.exec(command, {cwd: scriptPath}, function (err, data) {
-            next(err);
-          });
-        },
+      after(function (done) {
+        var command = 'rm -rf ' + scriptPath;
+        childProcess.exec(command, {cwd: 'test/fixtures/'}, done);
+      });
 
-        function runTransforms(next) {
-          Transformer.transform(fs.path, rules, next);
-        },
+      it('should provide a shell script correctly transforms', function(done) {
+        var rules = [
+          { action: 'replace', search: '\\sum', replace: '\\prod' },
+          { action: 'copy', source: 'A', dest: 'A-copy' },
+          { action: 'copy', source: 'B', dest: 'B-copy' },
+          { action: 'rename', source: 'sub/C', dest: 'sub/C-rename' }
+        ];
+        async.series([
+          function runScript(next) {
+            var command = 'bash ../script.sh';
+            childProcess.exec(command, {cwd: scriptPath}, function (err, data) {
+              next(err);
+            });
+          },
 
-        function getDiff(next) {
-          var command = 'diff -r ' + fs.path + ' ' + scriptPath;
-          childProcess.exec(command, function (err, diff) {
-            if (err && err.code > 1) { return next(err); }
-            expect(diff).to.be.empty();
-            next();
-          });
-        },
+          function runTransforms(next) {
+            Transformer.transform(fs.path, rules, next);
+          },
 
-        function removeTestCopy(next) {
-          var command = 'rm -rf ' + scriptPath;
-          childProcess.exec(command, {cwd: 'test/fixtures/'}, next);
-        }
-      ], done);
+          function getDiff(next) {
+            var command = 'diff -r ' + fs.path + ' ' + scriptPath;
+            childProcess.exec(command, function (err, diff) {
+              if (err && err.code > 1) { return next(err); }
+              expect(diff).to.be.empty();
+              next();
+            });
+          }
+        ], done);
+      });
     });
 
     it('should provide a correct full diff', function(done) {
@@ -289,6 +291,20 @@ describe('functional', function () {
           return line.match(/^[+-][^+-]/);
         }).join('\n');
         expect(diff).to.equal(expected);
+        done();
+      });
+    });
+
+    it('should use relative paths for full diffs', function(done) {
+      var rules = [
+        { action: 'replace', search: '\\sum', replace: '\\prod' },
+        { action: 'replace', search: '"cool"', replace: '"neat"' },
+        { action: 'replace', search: '/some/path/foo', replace: '/path/"bar"'}
+      ];
+      Transformer.transform(fs.path, rules, function (err, transformer) {
+        var diff = transformer.getDiff();
+        expect(diff.indexOf(transformer.driver.working)).to.equal(-1);
+        expect(diff.indexOf(transformer.driver.root)).to.equal(-1);
         done();
       });
     });
