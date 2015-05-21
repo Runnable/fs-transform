@@ -345,7 +345,7 @@ describe('Transformer', function() {
 
       var deltas = 'this is a delta';
       var diff = sinon.stub(transformer.driver, 'diff').yields(null, deltas);
-      var addDiff = sinon.spy(transformer, 'addDiff');
+      var setFileDiff = sinon.spy(transformer, 'setFileDiff');
       sinon.stub(transformer.driver, 'sed').yieldsAsync();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'remove').yields();
@@ -358,7 +358,7 @@ describe('Transformer', function() {
       transformer.replace(rule, function (err) {
         if (err) { return done(err); }
         expect(diff.callCount).to.equal(2);
-        expect(addDiff.callCount).to.equal(2);
+        expect(setFileDiff.callCount).to.equal(2);
         done();
       });
     });
