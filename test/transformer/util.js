@@ -96,39 +96,37 @@ describe('Transformer', function() {
     });
   }); // end 'addNameChange'
 
-  describe('addDiff', function() {
-    it('should add the diff to the current result', function (done) {
-      var transformer = new Transformer('/', []);
+  describe('setFileDiff', function() {
+    it('should set the file diff on the current result', function (done) {
+      var transformer = new Transformer('/etc', []);
       var result = transformer.pushResult({ action: 'replace' });
       var filename = '/etc/file1.txt';
+      var relativePath = transformer.driver.stripAbsolutePaths(filename);
       var diff = 'THIS IS SPARTA';
-      transformer.addDiff(filename, diff);
-      expect(result.diffs[filename]).to.be.an.array();
-      expect(result.diffs[filename]).to.not.be.empty();
-      expect(result.diffs[filename][0]).to.equal(diff);
+      transformer.setFileDiff(filename, diff);
+      expect(result.diffs[relativePath]).to.be.a.string();
+      expect(result.diffs[relativePath]).to.equal(diff);
       done();
     });
 
-    it('should add multiple diffs to the current result', function (done) {
-      var transformer = new Transformer('/', []);
+    it('should set multiple diffs to the current result', function (done) {
+      var transformer = new Transformer('/etc', []);
       var result = transformer.pushResult({ action: 'replace' });
       var filename = '/etc/file1.txt';
+      var relativePath = transformer.driver.stripAbsolutePaths(filename);
       var diff = 'THIS IS SPARTA';
       var filename2 = '/etc/file2.txt';
+      var relativePath2 = transformer.driver.stripAbsolutePaths(filename2);
       var diff2 = 'THIS IS ARTASPAY';
-      transformer.addDiff(filename, diff);
-      transformer.addDiff(filename, diff2);
-      transformer.addDiff(filename2, diff2);
-      expect(result.diffs[filename]).to.be.an.array();
-      expect(result.diffs[filename].length).to.equal(2);
-      expect(result.diffs[filename][0]).to.equal(diff);
-      expect(result.diffs[filename][1]).to.equal(diff2);
-      expect(result.diffs[filename2]).to.be.an.array();
-      expect(result.diffs[filename2]).to.not.be.empty();
-      expect(result.diffs[filename2][0]).to.equal(diff2);
+      transformer.setFileDiff(filename, diff);
+      transformer.setFileDiff(filename2, diff2);
+      expect(result.diffs[relativePath]).to.be.a.string();
+      expect(result.diffs[relativePath]).to.equal(diff);
+      expect(result.diffs[relativePath2]).to.be.a.string();
+      expect(result.diffs[relativePath2]).to.equal(diff2);
       done();
     });
-  }); // end 'addDiff'
+  }); // end 'setFileDiff'
 
   describe('setAction & getAction', function() {
     it('should set rule action handlers', function (done) {
