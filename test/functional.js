@@ -226,7 +226,7 @@ describe('functional', function () {
       Transformer.transform(fs.path, rules, function (err, transformer) {
         if (err) { return done(err); }
         var generatedScript = transformer.getScript();
-        var script = fs.read('../script.sh').replace(/\$ROOT/g, fs.path);
+        var script = fs.read('../script.sh');
         expect(generatedScript).to.equal(script);
         done();
       });

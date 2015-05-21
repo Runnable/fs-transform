@@ -152,9 +152,9 @@ describe('Transformer', function() {
     it('should use the ScriptGenerator class to generate scripts', function(done) {
       var transformer = new Transformer('/etc', []);
       var result = 'anbksnklnsskqlnskal2202';
-      sinon.stub(transformer.scriptGenerator, 'generate').returns(result);
+      sinon.stub(transformer.script, 'generate').returns(result);
       expect(transformer.getScript()).to.equal(result);
-      expect(transformer.scriptGenerator.generate.calledOnce).to.be.true();
+      expect(transformer.script.generate.calledOnce).to.be.true();
       done();
     });
   }); // end 'getScript'

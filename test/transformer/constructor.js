@@ -56,7 +56,7 @@ describe('Transformer', function() {
 
     it('should have a shell script generator', function(done) {
       var transformer = new Transformer('/etc', []);
-      expect(transformer.scriptGenerator).instanceof(ScriptGenerator);
+      expect(transformer.script).instanceof(ScriptGenerator);
       done();
     });
 
