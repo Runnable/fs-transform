@@ -17,34 +17,16 @@ var fs = require('fs');
 
 describe('ScriptGenerator', function() {
   describe('constructor', function () {
-    it('should set the given rules', function(done) {
-      var rules = [1, 2, 3];
-      sinon.stub(ScriptGenerator.prototype, 'setRules');
-      var script = new ScriptGenerator(rules);
-      expect(ScriptGenerator.prototype.setRules.calledWith(rules)).to.be.true();
-      ScriptGenerator.prototype.setRules.restore();
-      done();
-    });
-
-    it('should set the action handlers', function(done) {
+    it('should set the action generators', function(done) {
       var script = new ScriptGenerator();
-      var handlerNames = ['copy', 'rename', 'replace', 'exclude'];
-      expect(script.actionHandlers).to.exist();
-      handlerNames.forEach(function (name) {
-        expect(script.actionHandlers[name]).to.exist();
+      var generatorNames = ['copy', 'rename', 'replace', 'exclude'];
+      expect(script.actionGenerators).to.exist();
+      generatorNames.forEach(function (name) {
+        expect(script.actionGenerators[name]).to.exist();
       });
       done();
     });
   }); // end 'describe'
-
-  describe('setRules', function() {
-    it('should set the rules for the generator', function(done) {
-      var rules = [1, 2, 3];
-      var script = new ScriptGenerator(rules);
-      expect(script.rules).to.equal(rules);
-      done();
-    });
-  }); // end 'setRules'
 
   describe('generate', function() {
     var script;
@@ -52,38 +34,18 @@ describe('ScriptGenerator', function() {
     beforeEach(function (done) {
       script = new ScriptGenerator();
       sinon.stub(script, 'preamble').returns('PREAMBLE');
-      sinon.stub(script, 'generateRule', function (rule) {
-        return "RULE " + rule;
-      });
       done();
     });
 
     it('should generate the preamble', function(done) {
-      script.setRules([ 1, 2, 3 ]);
       script.generate();
       expect(script.preamble.calledOnce).to.be.true();
       done();
     });
 
     it('should generate the rule scripts', function(done) {
-      script.setRules([4, 5, 6]);
-      script.generate();
-      expect(script.generateRule.callCount).to.equal(3);
-      expect(script.generateRule.calledWith(4)).to.be.true();
-      expect(script.generateRule.calledWith(5)).to.be.true();
-      expect(script.generateRule.calledWith(6)).to.be.true();
-      done();
-    });
-
-    it('should return the fully composed script', function(done) {
-      script.setRules(['A', 'B', 'C']);
-      var result = script.generate();
-      expect(result).to.equal(
-        'PREAMBLE\n' +
-        'RULE A\n' +
-        'RULE B\n' +
-        'RULE C'
-      );
+      script.ruleScripts = [4, 5, 6];
+      expect(script.generate()).to.equal('PREAMBLE\n4\n5\n6');
       done();
     });
   }); // end 'generate'
@@ -97,58 +59,67 @@ describe('ScriptGenerator', function() {
     });
   }); // end 'preamble'
 
-  describe('generateRule', function() {
-    var script = new ScriptGenerator();
+  describe('addRule', function() {
+    var script;
 
     beforeEach(function (done) {
-      sinon.stub(script.actionHandlers, 'copy');
-      sinon.stub(script.actionHandlers, 'rename');
-      sinon.stub(script.actionHandlers, 'replace');
-      sinon.stub(script.actionHandlers, 'exclude');
+      script = new ScriptGenerator();
+      sinon.stub(script.actionGenerators, 'copy');
+      sinon.stub(script.actionGenerators, 'rename');
+      sinon.stub(script.actionGenerators, 'replace');
+      sinon.stub(script.actionGenerators, 'exclude');
       done();
     });
 
     afterEach(function (done) {
-      script.actionHandlers.copy.restore();
-      script.actionHandlers.rename.restore();
-      script.actionHandlers.replace.restore();
-      script.actionHandlers.exclude.restore();
+      script.actionGenerators.copy.restore();
+      script.actionGenerators.rename.restore();
+      script.actionGenerators.replace.restore();
+      script.actionGenerators.exclude.restore();
       done();
     });
 
     it('should use the copy handler for copy rules', function(done) {
       var rule = { action: 'copy' };
-      var index = 1;
-      script.generateRule(rule, index);
-      expect(script.actionHandlers.copy.calledWith(rule, index))
-        .to.be.true();
+      script.addRule(rule);
+      expect(script.actionGenerators.copy.calledWith(rule, 1)).to.be.true();
       done();
     });
 
     it('should use the rename handler for rename rules', function(done) {
       var rule = { action: 'rename' };
-      var index = 341;
-      script.generateRule(rule, index);
-      expect(script.actionHandlers.rename.calledWith(rule, index))
-        .to.be.true();
+      script.addRule(rule);
+      expect(script.actionGenerators.rename.calledWith(rule, 1)).to.be.true();
       done();
     });
 
     it('should use the replace handler for replace rules', function(done) {
       var rule = { action: 'replace' };
-      var index = 8888;
-      script.generateRule(rule, index);
-      expect(script.actionHandlers.replace.calledWith(rule, index))
-        .to.be.true();
+      script.addRule(rule);
+      expect(script.actionGenerators.replace.calledWith(rule, 1)).to.be.true();
       done();
     });
 
     it('should use the exclude handler for exclude rules', function(done) {
       var rule = { action: 'exclude' };
-      var index = 1337;
-      script.generateRule(rule, index);
-      expect(script.actionHandlers.exclude.calledWith(rule, index))
-        .to.be.true();
+      script.addRule(rule);
+      expect(script.actionGenerators.exclude.calledWith(rule, 1)).to.be.true();
+      done();
+    });
+
+    it('should correctly index rules', function(done) {
+      var rule = { action: 'replace' };
+      script.addRule(rule);
+      expect(script.actionGenerators.replace.calledWith(rule, 1)).to.be.true();
+
+      var rule2 = { action: 'rename' };
+      script.addRule(rule2);
+      expect(script.actionGenerators.rename.calledWith(rule2, 2)).to.be.true();
+
+      var rule3 = { action: 'exclude' };
+      script.addRule(rule3);
+      expect(script.actionGenerators.exclude.calledWith(rule3, 3)).to.be.true();
+
       done();
     });
   }); // end 'generateRule'

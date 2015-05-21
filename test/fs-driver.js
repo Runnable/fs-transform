@@ -46,6 +46,18 @@ describe('fs-driver', function () {
     });
   });
 
+  describe('escape', function() {
+    it('should ignore non-strings', function(done) {
+      var x = 0;
+      var y = {};
+      var z = /woo/g;
+      expect(FsDriver.escape(x)).to.equal(x);
+      expect(FsDriver.escape(y)).to.equal(y);
+      expect(FsDriver.escape(z)).to.equal(z);
+      done();
+    });
+  });
+
   describe('absolutePath', function () {
     var driver = new FsDriver('/tmp');
 

@@ -28,7 +28,7 @@ command -v rm >/dev/null 2>&1 || {
   error "Missing required command: rm";
 }
 
-# RULE 0
+# RULE 1
 # {
 #   action: replace,
 #   search: "\sum",
@@ -42,16 +42,16 @@ if ((${#results[@]} > 0)); then
   do
     if [[ ! $excludes =~ $name ]]; then
       sed -i.last 's/\\sum/\\prod/g' $name || {
-        warning "Rule 0: could not replace '\\sum' with '\\prod' in $name"
+        warning "Rule 1: could not replace '\\sum' with '\\prod' in $name"
       }
       rm -f $name.last
     fi
   done
 else
-  warning "Rule 0: no search results to replace."
+  warning "Rule 1: no search results to replace."
 fi
 
-# RULE 1
+# RULE 2
 # {
 #   action: "copy",
 #   source: "A",
@@ -59,10 +59,10 @@ fi
 # }
 
 cp A A-copy || {
-  warning "Rule 1: unable to copy A to A-copy"
+  warning "Rule 2: unable to copy A to A-copy"
 }
 
-# RULE 2
+# RULE 3
 # {
 #   action: "copy",
 #   source: "B",
@@ -70,10 +70,10 @@ cp A A-copy || {
 # }
 
 cp B B-copy || {
-  warning "Rule 2: unable to copy B to B-copy"
+  warning "Rule 3: unable to copy B to B-copy"
 }
 
-# RULE 3
+# RULE 4
 # {
 #   action: "rename",
 #   source: "sub/C",
@@ -81,5 +81,5 @@ cp B B-copy || {
 # }
 
 mv sub/C sub/C-rename || {
-  warning "Rule 3: unable to rename sub/C to sub/C-rename"
+  warning "Rule 4: unable to rename sub/C to sub/C-rename"
 }
