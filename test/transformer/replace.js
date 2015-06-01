@@ -123,16 +123,16 @@ describe('Transformer', function() {
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        '/etc/file1.txt:12:---',
-        '/etc/file2.txt:293:---'
+        '/etc/file1.txt',
+        '/etc/file2.txt'
       ].join('\n'));
 
       var rule = { action: 'replace', search: 'a', replace: 'b' };
       transformer.replace(rule, function (err) {
         if (err) { return done(err); }
         expect(sed.callCount).to.equal(2);
-        expect(sed.calledWith('a', 'b', '/etc/file1.txt', 12)).to.be.true();
-        expect(sed.calledWith('a', 'b', '/etc/file2.txt', 293)).to.be.true();
+        expect(sed.calledWith('a', 'b', '/etc/file1.txt')).to.be.true();
+        expect(sed.calledWith('a', 'b', '/etc/file2.txt')).to.be.true();
         done();
       });
     });
@@ -149,12 +149,12 @@ describe('Transformer', function() {
       sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         'Binary file /etc/example.bin matches',
-        '/etc/file1.txt:342:---'
+        '/etc/file1.txt'
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
         expect(sed.callCount).to.equal(1);
-        expect(sed.calledWith('a', 'b', '/etc/file1.txt', 342)).to.be.true();
+        expect(sed.calledWith('a', 'b', '/etc/file1.txt')).to.be.true();
         done();
       });
     });
@@ -168,20 +168,20 @@ describe('Transformer', function() {
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        '/etc/file1.txt:23:---',
-        '/etc/file2.txt:78:---',
-        '/etc/file3.txt:182:---',
-        '/etc/file4.txt:3232:---',
-        '/etc/suhweet/file4.txt:7:---'
+        '/etc/file1.txt',
+        '/etc/file2.txt',
+        '/etc/file3.txt',
+        '/etc/file4.txt',
+        '/etc/suhweet/file4.txt'
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
         expect(sed.callCount).to.equal(3);
-        expect(sed.calledWith('koopa', 'mario', '/etc/file1.txt', 23))
+        expect(sed.calledWith('koopa', 'mario', '/etc/file1.txt'))
           .to.be.true();
-        expect(sed.calledWith('koopa', 'mario', '/etc/file3.txt', 182))
+        expect(sed.calledWith('koopa', 'mario', '/etc/file3.txt'))
           .to.be.true();
-        expect(sed.calledWith('koopa', 'mario', '/etc/suhweet/file4.txt', 7))
+        expect(sed.calledWith('koopa', 'mario', '/etc/suhweet/file4.txt'))
           .to.be.true();
         done();
       });
@@ -203,15 +203,15 @@ describe('Transformer', function() {
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        '/etc/file1.txt:23:---',
-        '/etc/file2.txt:22:---',
-        '/etc/file2.txt:78:---',
-        '/etc/file3.txt:182:---'
+        '/etc/file1.txt',
+        '/etc/file2.txt',
+        '/etc/file2.txt',
+        '/etc/file3.txt'
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
         expect(sed.callCount).to.equal(1);
-        expect(sed.calledWith('a', 'b', '/etc/file3.txt', 182)).to.be.true();
+        expect(sed.calledWith('a', 'b', '/etc/file3.txt')).to.be.true();
         done();
       });
     });
@@ -232,9 +232,9 @@ describe('Transformer', function() {
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        '/etc/applied.txt:111:---',
-        '/etc/okay.txt:2384:---',
-        '/etc/file1.txt:50:---'
+        '/etc/applied.txt',
+        '/etc/okay.txt',
+        '/etc/file1.txt'
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
@@ -259,9 +259,9 @@ describe('Transformer', function() {
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        '/etc/file1.txt:50:---',
-        '/etc/file1.txt:89:---',
-        '/etc/file1.txt:123:---'
+        '/etc/file1.txt',
+        '/etc/file1.txt',
+        '/etc/file1.txt'
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
@@ -287,13 +287,9 @@ describe('Transformer', function() {
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        '/etc/file.txt:10:---',
-        '/etc/file.txt:12:---',
-        '/etc/file.txt:14:---',
-        '/etc/file2.txt:182:---',
-        '/etc/file2.txt:12:---',
-        '/etc/file2.txt:16:---',
-        '/etc/file3.txt:162:---'
+        '/etc/file.txt',
+        '/etc/file2.txt',
+        '/etc/file3.txt'
       ].join('\n'))
 
       var fileNames = [
@@ -320,8 +316,8 @@ describe('Transformer', function() {
         replace: 'super'
       };
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        '/etc/file.txt:10:---',
-        '/etc/file.txt:12:---',
+        '/etc/file.txt',
+        '/etc/file.txt',
       ].join('\n'));
       var sed = sinon.stub(transformer.driver, 'sed')
         .returns('command')
@@ -332,33 +328,6 @@ describe('Transformer', function() {
 
       transformer.replace(rule, function (err) {
         expect(sed.callCount).to.equal(0);
-        done();
-      });
-    });
-
-    it('should perform and save a diff for each changed file', function(done) {
-      var rule = {
-        action: 'replace',
-        search: 'alpha',
-        replace: 'beta'
-      };
-
-      var deltas = 'this is a delta';
-      var diff = sinon.stub(transformer.driver, 'diff').yields(null, deltas);
-      var setFileDiff = sinon.spy(transformer, 'setFileDiff');
-      sinon.stub(transformer.driver, 'sed').yieldsAsync();
-      sinon.stub(transformer.driver, 'copy').yields();
-      sinon.stub(transformer.driver, 'remove').yields();
-      sinon.stub(transformer.driver, 'grep').yields(null, [
-        '/etc/file1.txt:10:---',
-        '/etc/file2.txt:12:---',
-        '/etc/file2.txt:14:---'
-      ].join('\n'));
-
-      transformer.replace(rule, function (err) {
-        if (err) { return done(err); }
-        expect(diff.callCount).to.equal(2);
-        expect(setFileDiff.callCount).to.equal(2);
         done();
       });
     });
@@ -377,9 +346,9 @@ describe('Transformer', function() {
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        '/etc/file1.txt:10:---',
-        '/etc/file2.txt:12:---',
-        '/etc/file2.txt:14:---'
+        '/etc/file1.txt',
+        '/etc/file2.txt',
+        '/etc/file2.txt'
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
@@ -401,10 +370,9 @@ describe('Transformer', function() {
       sinon.stub(transformer.driver, 'sed').yieldsAsync();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
-        '/etc/file1.txt:10:---',
-        '/etc/file2.txt:12:---',
-        '/etc/file2.txt:14:---',
-        '/etc/file3.txt:293:---'
+        '/etc/file1.txt',
+        '/etc/file2.txt',
+        '/etc/file3.txt'
       ].join('\n'));
 
       var filenames = [
