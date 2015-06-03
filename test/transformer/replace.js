@@ -364,7 +364,6 @@ describe('Transformer', function() {
         search: 'alpha',
         replace: 'beta'
       };
-
       var remove = sinon.stub(transformer.driver, 'remove').yieldsAsync();
       sinon.stub(transformer.driver, 'diff').yields();
       sinon.stub(transformer.driver, 'sed').yieldsAsync();
@@ -389,6 +388,33 @@ describe('Transformer', function() {
           expect(remove.calledWith(originalName + ' ' + dotLastName))
             .to.be.true();
         });
+        done();
+      });
+    });
+
+    it('should only add the rule to the result script once', function(done) {
+      var rule = {
+        action: 'replace',
+        search: 'darn',
+        replace: 'yankees'
+      };
+      var remove = sinon.stub(transformer.driver, 'remove').yieldsAsync();
+      sinon.stub(transformer.driver, 'diff').yields();
+      sinon.stub(transformer.driver, 'sed').yieldsAsync();
+      sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        '/etc/file1.txt',
+        '/etc/file2.txt',
+        '/etc/file3.txt',
+        '/etc/file4.txt',
+        '/etc/file5.txt',
+        '/etc/file6.txt'
+      ].join('\n'));
+
+      sinon.spy(transformer.script, 'addRule');
+
+      transformer.replace(rule, function () {
+        expect(transformer.script.addRule.calledOnce).to.be.true();
         done();
       });
     });
