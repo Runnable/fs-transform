@@ -17,7 +17,6 @@ var noop = require('101/noop');
 describe('fs-driver', function () {
   describe('interface', function() {
     var driver = new FsDriver();
-
     it('should export the `FsDriver` class', function (done) {
       expect(FsDriver).to.exist();
       expect(typeof FsDriver).to.equal('function');
@@ -193,7 +192,7 @@ describe('fs-driver', function () {
 
     describe('grep', function() {
       it('should use driver.exec to perform the grep', function(done) {
-        var command = 'grep -rn \'search\' /tmp';
+        var command = 'grep -rlI \'search\' /tmp';
         driver.grep('search', function () {
           expect(driver.exec.calledOnce).to.be.true();
           expect(driver.exec.calledWith(command)).to.be.true();
@@ -204,7 +203,7 @@ describe('fs-driver', function () {
       it('should properly escape search patterns', function(done) {
         driver.grep('\\lambda\'', function (err) {
           if (err) { return done(err); }
-          var command = 'grep -rn \'\\\\lambda\\\'\' /tmp';
+          var command = 'grep -rlI \'\\\\lambda\\\'\' /tmp';
           expect(driver.exec.calledWith(command))
             .to.be.true();
           done();
@@ -212,7 +211,7 @@ describe('fs-driver', function () {
       });
 
       it('should use the working directory when one is supplied', function(done) {
-        var command = 'grep -rn \'search\' /working';
+        var command = 'grep -rlI \'search\' /working';
         driver.working = '/working';
         driver.grep('search', function (err) {
           if (err) { return done(err); }
@@ -225,8 +224,8 @@ describe('fs-driver', function () {
 
     describe('sed', function() {
       it('should use driver.exec to perform the sed', function(done) {
-        var command = 'sed -i.last \'1337s/bar/baz/g\' /tmp/file1.txt';
-        driver.sed('bar', 'baz', 'file1.txt', 1337, function () {
+        var command = 'sed -i.last \'s/bar/baz/g\' /tmp/file1.txt';
+        driver.sed('bar', 'baz', 'file1.txt', function () {
           expect(driver.exec.calledOnce).to.be.true();
           expect(driver.exec.calledWith(command)).to.be.true();
           done();
@@ -234,9 +233,9 @@ describe('fs-driver', function () {
       });
 
       it('should properly escape search and replace', function(done) {
-        driver.sed('/foo', '/bar', 'example.txt', 17, function (err) {
+        driver.sed('/foo', '/bar', 'example.txt', function (err) {
           if (err) { return done(err); }
-          var command = 'sed -i.last \'17s/\\/foo/\\/bar/g\' /tmp/example.txt';
+          var command = 'sed -i.last \'s/\\/foo/\\/bar/g\' /tmp/example.txt';
           expect(driver.exec.calledWith(command))
             .to.be.true();
           done();
