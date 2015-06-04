@@ -137,28 +137,6 @@ describe('Transformer', function() {
       });
     });
 
-    it('should ignore binary files', function(done) {
-      var rule = {
-        search: 'a',
-        replace: 'b'
-      };
-
-      var sed = sinon.stub(transformer.driver, 'sed').yields();
-      sinon.stub(transformer.driver, 'copy').yields();
-      sinon.stub(transformer.driver, 'remove').yields();
-      sinon.stub(transformer.driver, 'diff').yields();
-      sinon.stub(transformer.driver, 'grep').yields(null, [
-        'Binary file /etc/example.bin matches',
-        '/etc/file1.txt'
-      ].join('\n'));
-
-      transformer.replace(rule, function (err) {
-        expect(sed.callCount).to.equal(1);
-        expect(sed.calledWith('a', 'b', '/etc/file1.txt')).to.be.true();
-        done();
-      });
-    });
-
     it('should apply global file excludes', function(done) {
       var rule = { search: 'koopa', replace: 'mario' };
       transformer.exclude({ files: ['file2.txt', 'file4.txt'] }, noop);

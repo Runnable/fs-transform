@@ -17,7 +17,6 @@ var noop = require('101/noop');
 describe('fs-driver', function () {
   describe('interface', function() {
     var driver = new FsDriver();
-
     it('should export the `FsDriver` class', function (done) {
       expect(FsDriver).to.exist();
       expect(typeof FsDriver).to.equal('function');
@@ -193,7 +192,7 @@ describe('fs-driver', function () {
 
     describe('grep', function() {
       it('should use driver.exec to perform the grep', function(done) {
-        var command = 'grep -rl \'search\' /tmp';
+        var command = 'grep -rlI \'search\' /tmp';
         driver.grep('search', function () {
           expect(driver.exec.calledOnce).to.be.true();
           expect(driver.exec.calledWith(command)).to.be.true();
@@ -204,7 +203,7 @@ describe('fs-driver', function () {
       it('should properly escape search patterns', function(done) {
         driver.grep('\\lambda\'', function (err) {
           if (err) { return done(err); }
-          var command = 'grep -rl \'\\\\lambda\\\'\' /tmp';
+          var command = 'grep -rlI \'\\\\lambda\\\'\' /tmp';
           expect(driver.exec.calledWith(command))
             .to.be.true();
           done();
@@ -212,7 +211,7 @@ describe('fs-driver', function () {
       });
 
       it('should use the working directory when one is supplied', function(done) {
-        var command = 'grep -rl \'search\' /working';
+        var command = 'grep -rlI \'search\' /working';
         driver.working = '/working';
         driver.grep('search', function (err) {
           if (err) { return done(err); }

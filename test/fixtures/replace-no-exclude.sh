@@ -5,7 +5,7 @@
 #   replace: "probably"
 # }
 
-results=($(grep -rl 'absolutely' $search_files))
+results=($(grep -rlI 'absolutely' $search_files))
 excludes=""
 if ((${#results[@]} > 0)); then
   for name in $results

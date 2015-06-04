@@ -6,7 +6,7 @@
 #   excludes: [A.dmg, B.tar.gz]
 # }
 
-results=($(grep -rl 'whut' $search_files))
+results=($(grep -rlI 'whut' $search_files))
 excludes="A.dmg B.tar.gz"
 if ((${#results[@]} > 0)); then
   for name in $results

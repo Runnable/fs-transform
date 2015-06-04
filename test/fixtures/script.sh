@@ -35,7 +35,7 @@ command -v rm >/dev/null 2>&1 || {
 #   replace: "\prod"
 # }
 
-results=($(grep -rl '\\sum' $search_files))
+results=($(grep -rlI '\\sum' $search_files))
 excludes=""
 if ((${#results[@]} > 0)); then
   for name in $results
