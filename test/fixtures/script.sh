@@ -5,7 +5,7 @@
 #
 
 _script_name=`basename $0`
-search_files='.'
+search_files=`find . -type f | grep -v './.git'`
 warning() { echo "($_script_name) WARNING" $1; }
 error() { echo "($_script_name) ERROR" $1; exit 1; }
 

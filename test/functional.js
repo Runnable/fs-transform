@@ -235,11 +235,11 @@ describe('functional', function () {
     describe('scripts', function() {
       var scriptPath = fs.mock + '.script';
 
-      before(function (done) {
+      beforeEach(function (done) {
         childProcess.exec('cp -r ' + fs.mock + ' ' + scriptPath, done);
       });
 
-      after(function (done) {
+      afterEach(function (done) {
         var command = 'rm -rf ' + scriptPath;
         childProcess.exec(command, {cwd: 'test/fixtures/'}, done);
       });
@@ -263,6 +263,36 @@ describe('functional', function () {
             Transformer.transform(fs.path, rules, next);
           },
 
+          function getDiff(next) {
+            var command = 'diff -r ' + fs.path + ' ' + scriptPath;
+            childProcess.exec(command, function (err, diff) {
+              if (err && err.code > 1) { return next(err); }
+              expect(diff).to.be.empty();
+              next();
+            });
+          }
+        ], done);
+      });
+
+      it('should correctly handle global excludes', function(done) {
+        var script;
+        var rules = [
+          { action: 'exclude', files: ['script.sh', 'sub/C', 'A'] },
+          { action: 'replace', search: 'Mew', replace: 'Woof'}
+        ];
+        async.series([
+          function generateScript(next) {
+            Transformer.transform(fs.path, rules, function (err, transformer) {
+              var script = transformer.getScript();
+              fs.writeFile(scriptPath + '/script.sh', script, next);
+            });
+          },
+          function runScript(next) {
+            childProcess.exec('bash script.sh', { cwd: scriptPath }, next);
+          },
+          function removeScript(next) {
+            childProcess.exec('rm -f ' + scriptPath + '/script.sh', next);
+          },
           function getDiff(next) {
             var command = 'diff -r ' + fs.path + ' ' + scriptPath;
             childProcess.exec(command, function (err, diff) {
