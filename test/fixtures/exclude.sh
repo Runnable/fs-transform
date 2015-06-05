@@ -3,4 +3,5 @@
 #   action: "exclude",
 #   files: [A.dmg, B.tar.gz, gamma.pajama]
 # }
-search_files=`find . -type f | grep -v './.git' | grep -v '^./A.dmg$' | grep -v '^./B.tar.gz$' | grep -v '^./gamma.pajama$'`
+
+global_exclude="./$script_name ./A.dmg ./B.tar.gz ./gamma.pajama"

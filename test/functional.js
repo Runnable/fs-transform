@@ -277,7 +277,7 @@ describe('functional', function () {
       it('should correctly handle global excludes', function(done) {
         var script;
         var rules = [
-          { action: 'exclude', files: ['script.sh', 'sub/C', 'A'] },
+          { action: 'exclude', files: ['sub/C', 'A'] },
           { action: 'replace', search: 'Mew', replace: 'Woof'}
         ];
         async.series([
