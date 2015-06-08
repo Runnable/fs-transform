@@ -29,35 +29,31 @@ describe('ScriptGenerator', function() {
   }); // end 'describe'
 
   describe('generate', function() {
-    var script;
+    var script = new ScriptGenerator();
 
     beforeEach(function (done) {
-      script = new ScriptGenerator();
-      sinon.stub(script, 'preamble').returns('PREAMBLE');
+      sinon.stub(fs, 'readFileSync').returns('PREAMBLE\n');
+      done();
+    });
+
+    afterEach(function (done) {
+      fs.readFileSync.restore();
       done();
     });
 
     it('should generate the preamble', function(done) {
       script.generate();
-      expect(script.preamble.calledOnce).to.be.true();
+      expect(fs.readFileSync.calledOnce).to.be.true();
       done();
     });
 
     it('should generate the rule scripts', function(done) {
       script.ruleScripts = [4, 5, 6];
-      expect(script.generate()).to.equal('PREAMBLE\n4\n5\n6');
+      var result = script.generate();
+      expect(result).to.equal('PREAMBLE\n\n4\n5\n6');
       done();
     });
   }); // end 'generate'
-
-  describe('preamble', function() {
-    it('should generate and return the preamble', function(done) {
-      expect(new ScriptGenerator().preamble()).to.equal(
-        fs.readFileSync('test/fixtures/script-preamble.sh').toString()
-      );
-      done();
-    });
-  }); // end 'preamble'
 
   describe('addRule', function() {
     var script;
@@ -163,12 +159,12 @@ describe('ScriptGenerator', function() {
         action: 'replace',
         search: 'whut',
         replace: 'wat',
-        excludes: ['A.dmg', 'B.tar.gz']
+        exclude: ['A.dmg', 'B.tar.gz']
       };
       var index = 55;
-      expect(script.replace(rule, index)).to.equal(
-        fs.readFileSync('test/fixtures/replace.sh').toString()
-      );
+      var expected = fs.readFileSync('test/fixtures/replace.sh').toString();
+      var generated = script.replace(rule, index);
+      expect(generated).to.equal(expected);
       done();
     });
 

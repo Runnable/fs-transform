@@ -5,6 +5,4 @@
 #   dest: "bar.rtf"
 # }
 
-cp foo.txt bar.rtf || {
-  warning "Rule 102: unable to copy foo.txt to bar.rtf"
-}
+copy foo.txt bar.rtf

@@ -14,6 +14,8 @@ var Transformer = require('../index.js');
 var async = require('async');
 var childProcess = require('child_process');
 
+var debug = require('debug')('fs-transform:test');
+
 describe('functional', function () {
   beforeEach(fs.createTestDir);
   afterEach(fs.removeTestDir);
@@ -232,49 +234,6 @@ describe('functional', function () {
       });
     });
 
-    describe('scripts', function() {
-      var scriptPath = fs.mock + '.script';
-
-      before(function (done) {
-        childProcess.exec('cp -r ' + fs.mock + ' ' + scriptPath, done);
-      });
-
-      after(function (done) {
-        var command = 'rm -rf ' + scriptPath;
-        childProcess.exec(command, {cwd: 'test/fixtures/'}, done);
-      });
-
-      it('should provide a shell script correctly transforms', function(done) {
-        var rules = [
-          { action: 'replace', search: '\\sum', replace: '\\prod' },
-          { action: 'copy', source: 'A', dest: 'A-copy' },
-          { action: 'copy', source: 'B', dest: 'B-copy' },
-          { action: 'rename', source: 'sub/C', dest: 'sub/C-rename' }
-        ];
-        async.series([
-          function runScript(next) {
-            var command = 'bash ../script.sh';
-            childProcess.exec(command, {cwd: scriptPath}, function (err, data) {
-              next(err);
-            });
-          },
-
-          function runTransforms(next) {
-            Transformer.transform(fs.path, rules, next);
-          },
-
-          function getDiff(next) {
-            var command = 'diff -r ' + fs.path + ' ' + scriptPath;
-            childProcess.exec(command, function (err, diff) {
-              if (err && err.code > 1) { return next(err); }
-              expect(diff).to.be.empty();
-              next();
-            });
-          }
-        ], done);
-      });
-    });
-
     it('should provide a correct full diff', function(done) {
       var rules = [
         { action: 'replace', search: '\\sum', replace: '\\prod' },
@@ -309,4 +268,102 @@ describe('functional', function () {
       });
     });
   }); // end 'results'
+
+  describe('scripts', function() {
+    var scriptPath = fs.mock + '.script';
+
+    beforeEach(function (done) {
+      childProcess.exec('cp -r ' + fs.mock + ' ' + scriptPath, done);
+    });
+
+    afterEach(function (done) {
+      var command = 'rm -rf ' + scriptPath;
+      childProcess.exec(command, {cwd: 'test/fixtures/'}, done);
+    });
+
+    function compareScript(rules, done) {
+      var script;
+      async.series([
+        function generateScript(next) {
+          Transformer.transform(fs.path, rules, function (err, transformer) {
+            var script = transformer.getScript();
+            debug(script);
+            fs.writeFile(scriptPath + '/script.sh', script, next);
+          });
+        },
+        function runScript(next) {
+          childProcess.exec('bash script.sh', { cwd: scriptPath }, function (err, output) {
+            debug(output);
+            next(err);
+          });
+        },
+        function removeScript(next) {
+          childProcess.exec('rm -f ' + scriptPath + '/script.sh', next);
+        },
+        function getDiff(next) {
+          var command = 'diff -r ' + fs.path + ' ' + scriptPath;
+          childProcess.exec(command, function (err, diff) {
+            if (err && err.code > 1) { return next(err); }
+            debug(diff);
+            expect(diff).to.be.empty();
+            next();
+          });
+        }
+      ], done);
+    }
+
+    it('should provide a shell script correctly transforms', function(done) {
+      var rules = [
+        { action: 'replace', search: '\\sum', replace: '\\prod' },
+        { action: 'copy', source: 'A', dest: 'A-copy' },
+        { action: 'copy', source: 'B', dest: 'B-copy' },
+        { action: 'rename', source: 'sub/C', dest: 'sub/C-rename' }
+      ];
+      async.series([
+        function runScript(next) {
+          var command = 'bash ../script.sh';
+          childProcess.exec(command, {cwd: scriptPath}, function (err, data) {
+            next(err);
+          });
+        },
+
+        function runTransforms(next) {
+          Transformer.transform(fs.path, rules, next);
+        },
+
+        function getDiff(next) {
+          var command = 'diff -r ' + fs.path + ' ' + scriptPath;
+          childProcess.exec(command, function (err, diff) {
+            if (err && err.code > 1) { return next(err); }
+            expect(diff).to.be.empty();
+            next();
+          });
+        }
+      ], done);
+    });
+
+    it('should correctly handle global excludes', function(done) {
+      compareScript([
+        { action: 'exclude', files: ['sub/C', 'A'] },
+        { action: 'replace', search: 'Mew', replace: 'Woof'}
+      ], done);
+    });
+
+    it('should handle local replace excludes', function(done) {
+      compareScript([
+        {
+          action: 'replace',
+          search: 'Mew',
+          replace: 'Bark',
+          exclude: ['sub/C']
+        }
+      ], done);
+    });
+
+    it('should always exclude .git files', function(done) {
+      compareScript([
+        { action: 'replace', search: 'only_in_gitfile', replace: 'yus' }
+      ], done);
+    });
+  }); // end 'scripts'
 }); // end 'functional'

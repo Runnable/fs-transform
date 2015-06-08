@@ -29,7 +29,8 @@ module.exports = {
   diff: diff,
   mockDiff: mockDiff,
   read: read,
-  readMock: readMock
+  readMock: readMock,
+  writeFile: writeFile
 };
 
 /**
@@ -113,4 +114,11 @@ function readMock(filename, options) {
     path.resolve(mockPath, filename),
     options
   ).toString();
+}
+
+/**
+ * Alias for system `fs.writeFile`.
+ */
+function writeFile() {
+  return fs.writeFile.apply(this, arguments);
 }

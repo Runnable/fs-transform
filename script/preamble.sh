@@ -106,39 +106,3 @@ function replace {
 }
 
 ###########################  BEGIN Transformation Rules ########################
-
-# RULE 1
-# {
-#   action: replace,
-#   search: "\sum",
-#   replace: "\prod"
-# }
-
-replace '\\sum' '\\prod' ''
-
-# RULE 2
-# {
-#   action: "copy",
-#   source: "A",
-#   dest: "A-copy"
-# }
-
-copy A A-copy
-
-# RULE 3
-# {
-#   action: "copy",
-#   source: "B",
-#   dest: "B-copy"
-# }
-
-copy B B-copy
-
-# RULE 4
-# {
-#   action: "rename",
-#   source: "sub/C",
-#   dest: "sub/C-rename"
-# }
-
-rename sub/C sub/C-rename

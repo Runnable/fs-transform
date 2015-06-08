@@ -5,6 +5,4 @@
 #   dest: "bar.rtf"
 # }
 
-mv foo.txt bar.rtf || {
-  warning "Rule 42: unable to rename foo.txt to bar.rtf"
-}
+rename foo.txt bar.rtf
