@@ -96,7 +96,7 @@ function replace {
     if [[ $execute == 0 ]]; then continue; fi
 
     # Perform the search and replace
-    log "--- sed -i.last "s/$1/$2/g" $name"
+    log "--- sed -i.last 's/$1/$2/g' $name"
     sed -i.last "s/$1/$2/g" $name || {
       warning "Rule $rule_count: could not replace '$1' with '$2' in $name"
     }
