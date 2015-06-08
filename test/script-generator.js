@@ -181,6 +181,26 @@ describe('ScriptGenerator', function() {
       );
       done();
     });
+
+    it('should ignore leading slashes in file excludes', function(done) {
+      var script = new ScriptGenerator();
+      var rule = {
+        action: 'replace',
+        search: 'yes',
+        replace: 'no',
+        exclude: [
+          'file.txt',
+          '/somefile.txt',
+          './somefile2.txt',
+          '././././//yarfile.txt'
+        ]
+      };
+      var index = 5678;
+      expect(script.replace(rule, index)).to.equal(
+        fs.readFileSync('test/fixtures/replace-slash-exclude.sh').toString()
+      );
+      done();
+    });
   }); // end 'replace'
 
   describe('exclude', function() {
@@ -191,9 +211,22 @@ describe('ScriptGenerator', function() {
         files: ['A.dmg', 'B.tar.gz', 'gamma.pajama']
       };
       var index = 1234;
-      expect(script.exclude(rule, index)).to.equal(
-        fs.readFileSync('test/fixtures/exclude.sh').toString()
-      );
+      var expected = fs.readFileSync('test/fixtures/exclude.sh').toString();
+      var generated = script.exclude(rule, index);
+      expect(generated).to.equal(expected);
+      done();
+    });
+
+    it('should ignore leanding dots and slashes', function(done) {
+      var script = new ScriptGenerator();
+      var rule = {
+        action: 'exclude',
+        files: ['good.txt', '/bad.txt', './...//.///omg.txt']
+      };
+      var index = 1324;
+      var expected = fs.readFileSync('test/fixtures/exclude-slashes.sh').toString();
+      var generated = script.exclude(rule, index);
+      expect(generated).to.equal(expected);
       done();
     });
   }); // end 'exclude'
