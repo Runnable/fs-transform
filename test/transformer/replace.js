@@ -165,6 +165,33 @@ describe('Transformer', function() {
       });
     });
 
+    it('should always exclude .git files', function(done) {
+      var rule = { search: 'metroid', replace: 'samus' };
+      var sed = sinon.stub(transformer.driver, 'sed').yields();
+      sinon.stub(transformer.driver, 'copy').yields();
+      sinon.stub(transformer.driver, 'remove').yields();
+      sinon.stub(transformer.driver, 'diff').yields();
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        '/etc/.git/file1.txt',
+        '/etc/.git/file2.txt',
+        '/etc/file3.txt',
+        '/etc/file4.txt'
+      ].join('\n'));
+
+      transformer.replace(rule, function (err) {
+        expect(sed.callCount).to.equal(2);
+        expect(sed.calledWith('metroid', 'samus', '/etc/.git/file1.txt'))
+          .to.be.false();
+        expect(sed.calledWith('metroid', 'samus', '/etc/.git/file2.txt'))
+          .to.be.false();
+        expect(sed.calledWith('metroid', 'samus', '/etc/file3.txt'))
+          .to.be.true();
+        expect(sed.calledWith('metroid', 'samus', '/etc/file4.txt'))
+          .to.be.true();
+        done();
+      });
+    });
+
     it('should appropriately apply exclude filters', function(done) {
       var rule = {
         search: 'a',

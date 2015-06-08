@@ -159,12 +159,12 @@ describe('ScriptGenerator', function() {
         action: 'replace',
         search: 'whut',
         replace: 'wat',
-        excludes: ['A.dmg', 'B.tar.gz']
+        exclude: ['A.dmg', 'B.tar.gz']
       };
       var index = 55;
-      expect(script.replace(rule, index)).to.equal(
-        fs.readFileSync('test/fixtures/replace.sh').toString()
-      );
+      var expected = fs.readFileSync('test/fixtures/replace.sh').toString();
+      var generated = script.replace(rule, index);
+      expect(generated).to.equal(expected);
       done();
     });
 

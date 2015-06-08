@@ -76,18 +76,31 @@ function copy {
 #   $2 - Replace text
 #   $3 - Local exclusions
 function replace {
+  local git_pattern='.git/'
   log "Rule $rule_count: Replacing instances of '$1' with '$2'"
   for name in $(eval "grep -rlI '$1' .")
   do
-    if [[ ! $global_exclude =~ $name ]]; then
-      if [[ ! $3 =~ $name ]]; then
-        log "--- sed -i.last "s/$1/$2/g" $name"
-        sed -i.last "s/$1/$2/g" $name || {
-          warning "Rule $rule_count: could not replace '$1' with '$2' in $name"
-        }
-        rm -f $name.last
+    # Always exclude .git/ files
+    if [[ $name =~ $git_pattern ]]; then continue; fi
+
+    # Exclude files from the global and local exclude lists
+    local exclude_list="$global_exclude $3"
+    local execute=1
+    for exclude_file in $exclude_list
+    do
+      if [[ $name == $exclude_file ]]; then
+        execute=0
+        break;
       fi
-    fi
+    done
+    if [[ $execute == 0 ]]; then continue; fi
+
+    # Perform the search and replace
+    log "--- sed -i.last "s/$1/$2/g" $name"
+    sed -i.last "s/$1/$2/g" $name || {
+      warning "Rule $rule_count: could not replace '$1' with '$2' in $name"
+    }
+    rm -f $name.last
   done
   ((rule_count++))
 }
