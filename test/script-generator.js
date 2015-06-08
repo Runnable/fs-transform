@@ -221,7 +221,7 @@ describe('ScriptGenerator', function() {
       var script = new ScriptGenerator();
       var rule = {
         action: 'exclude',
-        files: ['/good.txt', '///./bad.txt', './././////omg.txt']
+        files: ['/good.txt', '///./bad.txt', './././////.omg.txt']
       };
       var index = 1324;
       var expected = fs.readFileSync('test/fixtures/exclude-slashes.sh').toString();
