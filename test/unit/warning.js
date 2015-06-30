@@ -9,7 +9,7 @@ var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
 
-var Warning = require('../lib/warning.js');
+var Warning = require('../../lib/warning.js');
 
 describe('Warning', function() {
   it('should set the warning rule and message', function(done) {
