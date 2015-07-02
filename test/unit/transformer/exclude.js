@@ -7,7 +7,7 @@ var afterEach = lab.afterEach;
 var expect = require('code').expect;
 var sinon = require('sinon');
 
-var Transformer = require('../../lib/transformer');
+var Transformer = require('../../../lib/transformer');
 
 describe('Transformer', function() {
   describe('exclude', function() {

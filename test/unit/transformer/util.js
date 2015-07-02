@@ -14,9 +14,9 @@ var createCount = require('callback-count');
 var noop = require('101/noop');
 var async = require('async');
 
-var Transformer = require('../../lib/transformer');
-var FsDriver = require('../../lib/fs-driver');
-var Warning = require('../../lib/warning');
+var Transformer = require('../../../lib/transformer');
+var FsDriver = require('../../../lib/fs-driver');
+var Warning = require('../../../lib/warning');
 
 describe('Transformer', function() {
   describe('pushResult', function() {
@@ -147,15 +147,4 @@ describe('Transformer', function() {
       done();
     });
   }); // end 'setAction & getAction'
-
-  describe('getScript', function() {
-    it('should use the ScriptGenerator class to generate scripts', function(done) {
-      var transformer = new Transformer('/etc', []);
-      var result = 'anbksnklnsskqlnskal2202';
-      sinon.stub(transformer.script, 'generate').returns(result);
-      expect(transformer.getScript()).to.equal(result);
-      expect(transformer.script.generate.calledOnce).to.be.true();
-      done();
-    });
-  }); // end 'getScript'
 });

@@ -8,7 +8,7 @@ var after = lab.after;
 var afterEach = lab.afterEach;
 var Code = require('code');
 var expect = Code.expect;
-var Transformer = require('../../lib/transformer');
+var Transformer = require('../../../lib/transformer');
 
 describe('Transformer', function() {
   describe('interface', function() {

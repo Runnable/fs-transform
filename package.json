@@ -4,7 +4,10 @@
   "description": "Fast, rule based, file system transformations.",
   "main": "index.js",
   "scripts": {
-    "test": "jshint index.js lib/ && lab -v -c -a code test/*",
+    "lint": "jshint index.js lib/",
+    "test": "npm run lint && lab -v -c -a code test/*",
+    "functional": "lab -v -c -a code test/functional/*",
+    "unit": "lab -v -c -a code test/unit/*",
     "doc": "jsdoc -d doc index.js lib/"
   },
   "jshintConfig": {
