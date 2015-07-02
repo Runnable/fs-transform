@@ -162,16 +162,6 @@ Transformer.dry('/root/directory', myRules, function (err, transformer) {
 });
 ```
 
-## Generating Shell Scripts
-`fs-transform` also has the ability to generate reusable shell scripts. Whenever
-a command that would mutate the state of the root directory executes
-successfully, the `Transform` class will keep track of that command and which
-rule generated it (via the `.saveCommand` method).
-
-Once the transformation is complete, you can call the `.getScript` method to
-get all the commands as an executable shell script. For an example of the output
-script see [the test script](https://github.com/Runnable/fs-transform/blob/master/test/fixtures/script.sh).
-
 ## Generating Diffs
 `fs-transform` allows you to get a full recursive diff between the root
 before transformations were applied, and the root after. Here's an example of
