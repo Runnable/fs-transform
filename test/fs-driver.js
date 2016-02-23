@@ -10,7 +10,7 @@ var Code = require('code');
 var expect = Code.expect;
 var sinon = require('sinon');
 var childProcess = require('child_process');
-var FsDriver = require('../../lib/fs-driver');
+var FsDriver = require('../lib/fs-driver');
 var fs = require('fs');
 var noop = require('101/noop');
 
