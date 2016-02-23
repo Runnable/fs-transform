@@ -1,159 +1,158 @@
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
-var after = lab.after;
-var afterEach = lab.afterEach;
-var Code = require('code');
-var expect = Code.expect;
-var sinon = require('sinon');
-var fs = require('./fixtures/fs-helper');
-var Transformer = require('../index.js');
-var async = require('async');
-var childProcess = require('child_process');
+'use strict'
 
-var debug = require('debug')('fs-transform:test');
+var Lab = require('lab')
+var lab = exports.lab = Lab.script()
+var describe = lab.describe
+var it = lab.it
+var beforeEach = lab.beforeEach
+var afterEach = lab.afterEach
+var Code = require('code')
+var expect = Code.expect
+var fs = require('./fixtures/fs-helper')
+var Transformer = require('../index.js')
+var async = require('async')
+var childProcess = require('child_process')
 
-describe('functional', function () {
-  beforeEach(fs.createTestDir);
-  afterEach(fs.removeTestDir);
+var debug = require('debug')('fs-transform:test')
 
-  describe('copy', function() {
-    it('should copy a file', function (done) {
-      var dest = 'A-copy';
-      var rules = [{ action: 'copy', source: 'A', dest: dest }];
-      Transformer.transform(fs.path, rules, function (err) {
-        if (err) { return done(err); }
-        expect(fs.exists(dest)).to.be.true();
-        done();
-      });
-    });
+describe('functional', () => {
+  beforeEach(fs.createTestDir)
+  afterEach(fs.removeTestDir)
 
-    it('should copy many files', function (done) {
+  describe('copy', () => {
+    it('should copy a file', (done) => {
+      var dest = 'A-copy'
+      var rules = [{ action: 'copy', source: 'A', dest: dest }]
+      Transformer.transform(fs.path, rules, (err) => {
+        if (err) { return done(err) }
+        expect(fs.exists(dest)).to.be.true()
+        done()
+      })
+    })
+
+    it('should copy many files', (done) => {
       var rules = [
         { action: 'copy', source: 'A', dest: 'A-copy' },
         { action: 'copy', source: 'B', dest: 'B-copy' },
         { action: 'copy', source: 'sub/C', dest: 'sub/C-copy' }
-      ];
-      Transformer.transform(fs.path, rules, function (err) {
-        if (err) { return done(err); }
-        rules.forEach(function (rule) {
-          expect(fs.exists(rule.dest)).to.be.true();
-        });
-        done();
-      });
-    });
+      ]
+      Transformer.transform(fs.path, rules, (err) => {
+        if (err) { return done(err) }
+        rules.forEach((rule) => {
+          expect(fs.exists(rule.dest)).to.be.true()
+        })
+        done()
+      })
+    })
 
-    it('should overwrite destination files with warning', function (done) {
-      var source = 'A';
-      var dest = 'B';
-      var rules = [{ action: 'copy', source: source, dest: dest }];
-      Transformer.transform(fs.path, rules, function (err, transformer) {
-        if (err) { return done(err); }
-        expect(transformer.warnings).to.not.be.empty();
-        fs.diff(source, dest, function (err, diff) {
-          if (err) { return done(err); }
-          expect(diff).to.be.empty();
-          done();
-        });
-      });
-    });
-  }); // end 'copy'
+    it('should overwrite destination files with warning', (done) => {
+      var source = 'A'
+      var dest = 'B'
+      var rules = [{ action: 'copy', source: source, dest: dest }]
+      Transformer.transform(fs.path, rules, (err, transformer) => {
+        if (err) { return done(err) }
+        expect(transformer.warnings).to.not.be.empty()
+        fs.diff(source, dest, (err, diff) => {
+          if (err) { return done(err) }
+          expect(diff).to.be.empty()
+          done()
+        })
+      })
+    })
+  }) // end 'copy'
 
-  describe('rename', function() {
-    it('should rename a file', function (done) {
-      var source = 'A';
-      var dest = 'A-rename';
+  describe('rename', () => {
+    it('should rename a file', (done) => {
+      var source = 'A'
+      var dest = 'A-rename'
       var rules = [
         { action: 'rename', source: source, dest: dest }
-      ];
-      Transformer.transform(fs.path, rules, function (err, transformer) {
-        if (err) { return done(err); }
-        expect(fs.exists(source)).to.be.false();
-        expect(fs.exists(dest)).to.be.true();
-        done();
-      });
-    });
+      ]
+      Transformer.transform(fs.path, rules, (err, transformer) => {
+        if (err) { return done(err) }
+        expect(fs.exists(source)).to.be.false()
+        expect(fs.exists(dest)).to.be.true()
+        done()
+      })
+    })
 
-    it('should rename many files', function (done) {
+    it('should rename many files', (done) => {
       var rules = [
         { action: 'rename', source: 'A', dest: 'A-rename' },
         { action: 'rename', source: 'B', dest: 'B-rename' },
         { action: 'rename', source: 'sub/C', dest: 'sub/C-rename' }
-      ];
-      Transformer.transform(fs.path, rules, function (err, transformer) {
-        if (err) { return done(err); }
-        rules.forEach(function (rule) {
-          expect(fs.exists(rule.source)).to.be.false();
-          expect(fs.exists(rule.dest)).to.be.true();
-        });
-        done();
-      });
-    });
+      ]
+      Transformer.transform(fs.path, rules, (err, transformer) => {
+        if (err) { return done(err) }
+        rules.forEach((rule) => {
+          expect(fs.exists(rule.source)).to.be.false()
+          expect(fs.exists(rule.dest)).to.be.true()
+        })
+        done()
+      })
+    })
 
-    it('should overwrite files with a warning', function (done) {
-      var source = 'A';
-      var dest = 'B';
-      var rules = [{ action: 'rename', source: source, dest: dest }];
-      Transformer.transform(fs.path, rules, function (err, transformer) {
-        if (err) { return done(err); }
-        expect(transformer.warnings).to.not.be.empty();
-        expect(fs.exists(source)).to.be.false();
-        expect(fs.exists(dest)).to.be.true();
-        fs.mockDiff(dest, source, function (err, diff) {
-          if (err) { return done(err); }
-          expect(diff).to.be.empty();
-          done();
-        });
-      });
-    });
-  }); // end 'rename'
+    it('should overwrite files with a warning', (done) => {
+      var source = 'A'
+      var dest = 'B'
+      var rules = [{ action: 'rename', source: source, dest: dest }]
+      Transformer.transform(fs.path, rules, (err, transformer) => {
+        if (err) { return done(err) }
+        expect(transformer.warnings).to.not.be.empty()
+        expect(fs.exists(source)).to.be.false()
+        expect(fs.exists(dest)).to.be.true()
+        fs.mockDiff(dest, source, (err, diff) => {
+          if (err) { return done(err) }
+          expect(diff).to.be.empty()
+          done()
+        })
+      })
+    })
+  }) // end 'rename'
 
-  describe('replace', function() {
-    it('should replace text in a file', function(done) {
-      var search = 'File B is good';
-      var replace = 'File B is great'; // stay positive!
-      var rules = [{ action: 'replace', search: search, replace: replace }];
-      Transformer.transform(fs.path, rules, function (err, transformer) {
-        if (err) { return done(err); }
-        var bData = fs.read('B');
-        var dData = fs.read('sub/subsub/D');
-        expect(bData.match(search)).to.be.null();
-        expect(bData.match(replace)).to.not.be.null();
-        expect(dData.match(search)).to.be.null();
-        expect(dData.match(replace)).to.not.be.null();
-        done();
-      });
-    });
+  describe('replace', () => {
+    it('should replace text in a file', (done) => {
+      var search = 'File B is good'
+      var replace = 'File B is great' // stay positive!
+      var rules = [{ action: 'replace', search: search, replace: replace }]
+      Transformer.transform(fs.path, rules, (err, transformer) => {
+        if (err) { return done(err) }
+        var bData = fs.read('B')
+        var dData = fs.read('sub/subsub/D')
+        expect(bData.match(search)).to.be.null()
+        expect(bData.match(replace)).to.not.be.null()
+        expect(dData.match(search)).to.be.null()
+        expect(dData.match(replace)).to.not.be.null()
+        done()
+      })
+    })
 
-    it('should replace text with special characters', function(done) {
+    it('should replace text with special characters', (done) => {
       var rules = [
         { action: 'replace', search: '\\sum', replace: '\\prod' },
         { action: 'replace', search: '"cool"', replace: '"neat"' },
-        { action: 'replace', search: '/some/path/foo', replace: '/path/"bar"'}
-      ];
-      Transformer.transform(fs.path, rules, function (err, transformer) {
-        if (err) { return done(err); }
+        { action: 'replace', search: '/some/path/foo', replace: '/path/"bar"' }
+      ]
+      Transformer.transform(fs.path, rules, (err, transformer) => {
+        if (err) { return done(err) }
 
-        var dataC = fs.read('sub/C');
-        expect(dataC.match(rules[0].search)).to.be.null();
-        expect(dataC.match(rules[0].replace)).to.not.be.null();
+        var dataC = fs.read('sub/C')
+        expect(dataC.match(rules[0].search)).to.be.null()
+        expect(dataC.match(rules[0].replace)).to.not.be.null()
 
-        var dataD = fs.read('sub/subsub/D');
-        expect(dataD.match(rules[1].search)).to.be.null();
-        expect(dataD.match(rules[1].replace)).to.not.be.null();
+        var dataD = fs.read('sub/subsub/D')
+        expect(dataD.match(rules[1].search)).to.be.null()
+        expect(dataD.match(rules[1].replace)).to.not.be.null()
 
-        var dataA = fs.read('A');
-        expect(dataA.match(rules[2].search)).to.be.null();
-        expect(dataA.match(rules[2].replace)).to.not.be.null();
+        var dataA = fs.read('A')
+        expect(dataA.match(rules[2].search)).to.be.null()
+        expect(dataA.match(rules[2].replace)).to.not.be.null()
 
-        done();
-      });
-    });
+        done()
+      })
+    })
 
-    it('should apply exclusions', function(done) {
+    it('should apply exclusions', (done) => {
       var rules = [{
         action: 'replace',
         search: 'Mew',
@@ -162,194 +161,196 @@ describe('functional', function () {
           'B',
           'not-there'
         ]
-      }];
-      Transformer.transform(fs.path, rules, function (err, transformer) {
-        if (err) { return done(err); }
-        var dataB = fs.read('B');
-        var linesC = fs.read('sub/C').split('\n');
-        expect(linesC[3]).to.equal('Woof');
-        expect(linesC[4]).to.equal('Woof');
-        expect(linesC[5]).to.equal('Woof');
-        expect(linesC[7]).to.equal('Woof');
-        expect(dataB.match('Woof')).to.be.null();
-        expect(transformer.warnings).to.not.be.empty();
+      }]
+      Transformer.transform(fs.path, rules, (err, transformer) => {
+        if (err) { return done(err) }
+        var dataB = fs.read('B')
+        var linesC = fs.read('sub/C').split('\n')
+        expect(linesC[3]).to.equal('Woof')
+        expect(linesC[4]).to.equal('Woof')
+        expect(linesC[5]).to.equal('Woof')
+        expect(linesC[7]).to.equal('Woof')
+        expect(dataB.match('Woof')).to.be.null()
+        expect(transformer.warnings).to.not.be.empty()
         expect(transformer.warnings[0].message)
-          .to.equal('Unused exclude.');
-        done();
-      });
-    });
+          .to.equal('Unused exclude.')
+        done()
+      })
+    })
 
-    it('should warn if excludes all results', function (done) {
-      var search = 'File A';
-      var replace = 'File X';
+    it('should warn if excludes all results', (done) => {
+      var search = 'File A'
+      var replace = 'File X'
       var rules = [{
         action: 'replace',
         search: search,
         replace: replace,
         exclude: ['A']
-      }];
-      Transformer.transform(fs.path, rules, function (err, transformer) {
-        if (err) { return done(err); }
-        var dataA = fs.read('A');
-        expect(dataA.match(search)).to.not.be.null();
-        expect(dataA.match(replace)).to.be.null();
-        expect(transformer.warnings).to.not.be.empty();
+      }]
+      Transformer.transform(fs.path, rules, (err, transformer) => {
+        if (err) { return done(err) }
+        var dataA = fs.read('A')
+        expect(dataA.match(search)).to.not.be.null()
+        expect(dataA.match(replace)).to.be.null()
+        expect(transformer.warnings).to.not.be.empty()
         expect(transformer.warnings[0].message)
-          .to.equal('All results were excluded.');
-        done();
-      });
-    });
-  }); // end 'replace'
+          .to.equal('All results were excluded.')
+        done()
+      })
+    })
+  }) // end 'replace'
 
-  describe('results', function() {
-    it('should add a result for each valid rule', function(done) {
+  describe('results', () => {
+    it('should add a result for each valid rule', (done) => {
       var rules = [
         { action: 'replace', search: '\\sum', replace: '\\prod' },
         { action: 'replace', search: '"cool"', replace: '"neat"' },
-        { action: 'replace', search: '/some/path/foo', replace: '/path/"bar"'},
+        { action: 'replace', search: '/some/path/foo', replace: '/path/"bar"' },
         { action: 'copy', source: 'A', dest: 'A-copy' },
         { action: 'copy', source: 'B', dest: 'B-copy' },
         { action: 'copy', source: 'sub/C', dest: 'sub/C-copy' }
-      ];
-      Transformer.transform(fs.path, rules, function (err, transformer) {
-        if (err) { return done(err); }
-        expect(transformer.results.length).to.equal(rules.length);
-        done();
-      });
-    });
+      ]
+      Transformer.transform(fs.path, rules, (err, transformer) => {
+        if (err) { return done(err) }
+        expect(transformer.results.length).to.equal(rules.length)
+        done()
+      })
+    })
 
-    it('should provide the correct shell script', function(done) {
+    it('should provide the correct shell script', (done) => {
       var rules = [
         { action: 'replace', search: '\\sum', replace: '\\prod' },
         { action: 'copy', source: 'A', dest: 'A-copy' },
         { action: 'copy', source: 'B', dest: 'B-copy' },
         { action: 'rename', source: 'sub/C', dest: 'sub/C-rename' }
-      ];
-      Transformer.transform(fs.path, rules, function (err, transformer) {
-        if (err) { return done(err); }
-        var generatedScript = transformer.getScript();
-        var script = fs.read('../script.sh');
-        expect(generatedScript).to.equal(script);
-        done();
-      });
-    });
+      ]
+      Transformer.transform(fs.path, rules, (err, transformer) => {
+        if (err) { return done(err) }
+        var generatedScript = transformer.getScript()
+        var script = fs.read('../script.sh')
+        expect(generatedScript).to.equal(script)
+        done()
+      })
+    })
 
-    it('should provide a correct full diff', function(done) {
+    it('should provide a correct full diff', (done) => {
       var rules = [
         { action: 'replace', search: '\\sum', replace: '\\prod' },
         { action: 'replace', search: '"cool"', replace: '"neat"' },
-        { action: 'replace', search: '/some/path/foo', replace: '/path/"bar"'}
-      ];
+        { action: 'replace', search: '/some/path/foo', replace: '/path/"bar"' }
+      ]
 
-      Transformer.transform(fs.path, rules, function (err, transformer) {
-        if (err) { return done(err); }
-        var expected = fs.read('../diff').split('\n').filter(function (line) {
-          return line.match(/^[+-][^+-]/);
-        }).join('\n');
-        var diff = transformer.getDiff().split('\n').filter(function (line) {
-          return line.match(/^[+-][^+-]/);
-        }).join('\n');
-        expect(diff).to.equal(expected);
-        done();
-      });
-    });
+      Transformer.transform(fs.path, rules, (err, transformer) => {
+        if (err) { return done(err) }
+        var expected = fs.read('../diff').split('\n').filter((line) => {
+          return line.match(/^[+-][^+-]/)
+        }).join('\n')
+        var diff = transformer.getDiff().split('\n').filter((line) => {
+          return line.match(/^[+-][^+-]/)
+        }).join('\n')
+        expect(diff).to.equal(expected)
+        done()
+      })
+    })
 
-    it('should use relative paths for full diffs', function(done) {
+    it('should use relative paths for full diffs', (done) => {
       var rules = [
         { action: 'replace', search: '\\sum', replace: '\\prod' },
         { action: 'replace', search: '"cool"', replace: '"neat"' },
-        { action: 'replace', search: '/some/path/foo', replace: '/path/"bar"'}
-      ];
-      Transformer.transform(fs.path, rules, function (err, transformer) {
-        var diff = transformer.getDiff();
-        expect(diff.indexOf(transformer.driver.working)).to.equal(-1);
-        expect(diff.indexOf(transformer.driver.root)).to.equal(-1);
-        done();
-      });
-    });
-  }); // end 'results'
+        { action: 'replace', search: '/some/path/foo', replace: '/path/"bar"' }
+      ]
+      Transformer.transform(fs.path, rules, (err, transformer) => {
+        if (err) { return done(err) }
+        var diff = transformer.getDiff()
+        expect(diff.indexOf(transformer.driver.working)).to.equal(-1)
+        expect(diff.indexOf(transformer.driver.root)).to.equal(-1)
+        done()
+      })
+    })
+  }) // end 'results'
 
-  describe('scripts', function() {
-    var scriptPath = fs.mock + '.script';
+  describe('scripts', () => {
+    var scriptPath = fs.mock + '.script'
 
-    beforeEach(function (done) {
-      childProcess.exec('cp -r ' + fs.mock + ' ' + scriptPath, done);
-    });
+    beforeEach((done) => {
+      childProcess.exec('cp -r ' + fs.mock + ' ' + scriptPath, done)
+    })
 
-    afterEach(function (done) {
-      var command = 'rm -rf ' + scriptPath;
-      childProcess.exec(command, {cwd: 'test/fixtures/'}, done);
-    });
+    afterEach((done) => {
+      var command = 'rm -rf ' + scriptPath
+      childProcess.exec(command, {cwd: 'test/fixtures/'}, done)
+    })
 
-    function compareScript(rules, done) {
-      var script;
+    function compareScript (rules, done) {
+      var script
       async.series([
-        function generateScript(next) {
-          Transformer.transform(fs.path, rules, function (err, transformer) {
-            var script = transformer.getScript();
-            debug(script);
-            fs.writeFile(scriptPath + '/script.sh', script, next);
-          });
+        function generateScript (next) {
+          Transformer.transform(fs.path, rules, (err, transformer) => {
+            if (err) { return next(err) }
+            script = transformer.getScript()
+            debug(script)
+            fs.writeFile(scriptPath + '/script.sh', script, next)
+          })
         },
-        function runScript(next) {
-          childProcess.exec('bash script.sh', { cwd: scriptPath }, function (err, output) {
-            debug(output);
-            next(err);
-          });
+        function runScript (next) {
+          childProcess.exec('bash script.sh', { cwd: scriptPath }, (err, output) => {
+            debug(output)
+            next(err)
+          })
         },
-        function removeScript(next) {
-          childProcess.exec('rm -f ' + scriptPath + '/script.sh', next);
+        function removeScript (next) {
+          childProcess.exec('rm -f ' + scriptPath + '/script.sh', next)
         },
-        function getDiff(next) {
-          var command = 'diff -r ' + fs.path + ' ' + scriptPath;
-          childProcess.exec(command, function (err, diff) {
-            if (err && err.code > 1) { return next(err); }
-            debug(diff);
-            expect(diff).to.be.empty();
-            next();
-          });
+        function getDiff (next) {
+          var command = 'diff -r ' + fs.path + ' ' + scriptPath
+          childProcess.exec(command, (err, diff) => {
+            if (err && err.code > 1) { return next(err) }
+            debug(diff)
+            expect(diff).to.be.empty()
+            next()
+          })
         }
-      ], done);
+      ], done)
     }
 
-    it('should provide a shell script correctly transforms', function(done) {
+    it('should provide a shell script correctly transforms', (done) => {
       var rules = [
         { action: 'replace', search: '\\sum', replace: '\\prod' },
         { action: 'copy', source: 'A', dest: 'A-copy' },
         { action: 'copy', source: 'B', dest: 'B-copy' },
         { action: 'rename', source: 'sub/C', dest: 'sub/C-rename' }
-      ];
+      ]
       async.series([
-        function runScript(next) {
-          var command = 'bash ../script.sh';
-          childProcess.exec(command, {cwd: scriptPath}, function (err, data) {
-            next(err);
-          });
+        function runScript (next) {
+          var command = 'bash ../script.sh'
+          childProcess.exec(command, {cwd: scriptPath}, (err, data) => {
+            next(err)
+          })
         },
 
-        function runTransforms(next) {
-          Transformer.transform(fs.path, rules, next);
+        function runTransforms (next) {
+          Transformer.transform(fs.path, rules, next)
         },
 
-        function getDiff(next) {
-          var command = 'diff -r ' + fs.path + ' ' + scriptPath;
-          childProcess.exec(command, function (err, diff) {
-            if (err && err.code > 1) { return next(err); }
-            expect(diff).to.be.empty();
-            next();
-          });
+        function getDiff (next) {
+          var command = 'diff -r ' + fs.path + ' ' + scriptPath
+          childProcess.exec(command, (err, diff) => {
+            if (err && err.code > 1) { return next(err) }
+            expect(diff).to.be.empty()
+            next()
+          })
         }
-      ], done);
-    });
+      ], done)
+    })
 
-    it('should correctly handle global excludes', function(done) {
+    it('should correctly handle global excludes', (done) => {
       compareScript([
         { action: 'exclude', files: ['sub/C', 'A'] },
-        { action: 'replace', search: 'Mew', replace: 'Woof'}
-      ], done);
-    });
+        { action: 'replace', search: 'Mew', replace: 'Woof' }
+      ], done)
+    })
 
-    it('should handle local replace excludes', function(done) {
+    it('should handle local replace excludes', (done) => {
       compareScript([
         {
           action: 'replace',
@@ -357,13 +358,13 @@ describe('functional', function () {
           replace: 'Bark',
           exclude: ['sub/C']
         }
-      ], done);
-    });
+      ], done)
+    })
 
-    it('should always exclude .git files', function(done) {
+    it('should always exclude .git files', (done) => {
       compareScript([
         { action: 'replace', search: 'only_in_gitfile', replace: 'yus' }
-      ], done);
-    });
-  }); // end 'scripts'
-}); // end 'functional'
+      ], done)
+    })
+  }) // end 'scripts'
+}) // end 'functional'
