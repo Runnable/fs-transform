@@ -1,6 +1,6 @@
 {
   "name": "fs-transform",
-  "version": "4.0.1",
+  "version": "5.0.0",
   "description": "Fast, rule based, file system transformations.",
   "main": "index.js",
   "scripts": {
