@@ -14,7 +14,7 @@ var createCount = require('callback-count');
 var noop = require('101/noop');
 var async = require('async');
 
-var Transformer = require('../../../lib/transformer');
+var Transformer = require('../../lib/transformer');
 
 describe('Transformer', function() {
   describe('transform', function() {

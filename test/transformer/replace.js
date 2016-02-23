@@ -13,32 +13,22 @@ var childProcess = require('child_process');
 var createCount = require('callback-count');
 var noop = require('101/noop');
 var async = require('async');
-var fs = require('fs');
 
-var Transformer = require('../../../lib/transformer');
-var FsDriver = require('../../../lib/fs-driver');
-var Warning = require('../../../lib/warning');
+var Transformer = require('../../lib/transformer');
+var FsDriver = require('../../lib/fs-driver');
+var Warning = require('../../lib/warning');
 
 describe('Transformer', function() {
   describe('replace', function() {
     var transformer;
     beforeEach(function (done) {
       transformer = new Transformer('/etc', []);
-      sinon.stub(fs, 'readFileSync')
-      sinon.stub(fs, 'readFile').yieldsAsync();
-      sinon.stub(fs, 'writeFile').yields();
-      done();
-    });
-
-    afterEach(function (done) {
-      fs.readFileSync.restore();
-      fs.readFile.restore();
-      fs.writeFile.restore();
       done();
     });
 
     describe('warnings', function() {
       var grepSpy;
+      var sedSpy;
       var copySpy;
       var removeSpy;
       var diffSpy;
@@ -46,6 +36,7 @@ describe('Transformer', function() {
       beforeEach(function (done) {
         transformer = new Transformer('/etc', []);
         grepSpy = sinon.spy(transformer.driver, 'grep');
+        sedSpy = sinon.spy(transformer.driver, 'sed');
         copySpy = sinon.spy(transformer.driver, 'copy');
         removeSpy = sinon.spy(transformer.driver, 'remove');
         diffSpy = sinon.spy(transformer.driver, 'diff');
@@ -56,6 +47,7 @@ describe('Transformer', function() {
         var rule = {};
         transformer.replace(rule, function (err) {
           expect(grepSpy.callCount).to.equal(0);
+          expect(sedSpy.callCount).to.equal(0);
           expect(copySpy.callCount).to.equal(0);
           expect(removeSpy.callCount).to.equal(0);
           expect(diffSpy.callCount).to.equal(0);
@@ -71,6 +63,7 @@ describe('Transformer', function() {
         var rule = { search: 'a' };
         transformer.replace(rule, function (err) {
           expect(grepSpy.callCount).to.equal(0);
+          expect(sedSpy.callCount).to.equal(0);
           expect(copySpy.callCount).to.equal(0);
           expect(removeSpy.callCount).to.equal(0);
           expect(diffSpy.callCount).to.equal(0);
@@ -124,47 +117,22 @@ describe('Transformer', function() {
       transformer.replace(rule, noop);
     });
 
-    it('should check each file for full contents', function(done) {
-      var rule = { action: 'replace', search: 'a', replace: 'b' };
-      var files =['/etc/file1.txt', '/etc/file2.txt'];
-
-      fs.readFileSync.returns('a');
-      fs.readFile.yieldsAsync(null, 'a');
-
+    it('should call sed on each file in the result set', function(done) {
+      var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'diff').yields();
-      sinon.stub(transformer.driver, 'grep').yields(null, files.join('\n'));
+      sinon.stub(transformer.driver, 'grep').yields(null, [
+        '/etc/file1.txt',
+        '/etc/file2.txt'
+      ].join('\n'));
 
-      transformer.replace(rule, function (err) {
-        if (err) { return done(err); }
-        expect(fs.readFileSync.calledWith(files[0])).to.be.true();
-        expect(fs.readFileSync.calledWith(files[1])).to.be.true();
-        done();
-      });
-    });
-
-    it('should replace contents on each file', function(done) {
       var rule = { action: 'replace', search: 'a', replace: 'b' };
-      var files =['/etc/file1.txt', '/etc/file2.txt'];
-
-      fs.readFileSync.returns('a');
-      fs.readFile.yieldsAsync(null, 'a');
-
-      sinon.stub(transformer.driver, 'copy').yields();
-      sinon.stub(transformer.driver, 'remove').yields();
-      sinon.stub(transformer.driver, 'diff').yields();
-      sinon.stub(transformer.driver, 'grep').yields(null, files.join('\n'));
-
       transformer.replace(rule, function (err) {
         if (err) { return done(err); }
-        expect(fs.writeFile.callCount).to.equal(2);
-        expect(fs.writeFile.firstCall.calledWith(
-          '/etc/file1.txt', 'b'
-        )).to.be.true();
-        expect(fs.writeFile.secondCall.calledWith(
-          '/etc/file2.txt', 'b'
-        )).to.be.true();
+        expect(sed.callCount).to.equal(2);
+        expect(sed.calledWith('a', 'b', '/etc/file1.txt')).to.be.true();
+        expect(sed.calledWith('a', 'b', '/etc/file2.txt')).to.be.true();
         done();
       });
     });
@@ -172,9 +140,6 @@ describe('Transformer', function() {
     it('should apply global file excludes', function(done) {
       var rule = { search: 'koopa', replace: 'mario' };
       transformer.exclude({ files: ['file2.txt', 'file4.txt'] }, noop);
-
-      fs.readFileSync.returns('koopa');
-      fs.readFile.yieldsAsync(null, 'koopa');
 
       var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
@@ -189,20 +154,20 @@ describe('Transformer', function() {
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
-        expect(fs.writeFile.callCount).to.equal(3);
-        expect(fs.writeFile.calledWith('/etc/file1.txt')).to.be.true();
-        expect(fs.writeFile.calledWith('/etc/file3.txt')).to.be.true();
-        expect(fs.writeFile.calledWith('/etc/suhweet/file4.txt')).to.be.true();
+        expect(sed.callCount).to.equal(3);
+        expect(sed.calledWith('koopa', 'mario', '/etc/file1.txt'))
+          .to.be.true();
+        expect(sed.calledWith('koopa', 'mario', '/etc/file3.txt'))
+          .to.be.true();
+        expect(sed.calledWith('koopa', 'mario', '/etc/suhweet/file4.txt'))
+          .to.be.true();
         done();
       });
     });
 
     it('should always exclude .git files', function(done) {
       var rule = { search: 'metroid', replace: 'samus' };
-
-      fs.readFileSync.returns('metroid');
-      fs.readFile.yieldsAsync(null, 'metroid');
-
+      var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'diff').yields();
@@ -214,11 +179,15 @@ describe('Transformer', function() {
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
-        expect(fs.readFile.callCount).to.equal(2);
-        expect(fs.readFile.calledWith('/etc/.git/file1.txt')).to.be.false();
-        expect(fs.readFile.calledWith('/etc/.git/file2.txt')).to.be.false();
-        expect(fs.readFile.calledWith('/etc/file3.txt')).to.be.true();
-        expect(fs.readFile.calledWith('/etc/file4.txt')).to.be.true();
+        expect(sed.callCount).to.equal(2);
+        expect(sed.calledWith('metroid', 'samus', '/etc/.git/file1.txt'))
+          .to.be.false();
+        expect(sed.calledWith('metroid', 'samus', '/etc/.git/file2.txt'))
+          .to.be.false();
+        expect(sed.calledWith('metroid', 'samus', '/etc/file3.txt'))
+          .to.be.true();
+        expect(sed.calledWith('metroid', 'samus', '/etc/file4.txt'))
+          .to.be.true();
         done();
       });
     });
@@ -234,9 +203,7 @@ describe('Transformer', function() {
         ]
       };
 
-      fs.readFileSync.returns('a');
-      fs.readFile.yieldsAsync(null, 'a');
-
+      var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'diff').yields();
@@ -248,8 +215,8 @@ describe('Transformer', function() {
       ].join('\n'));
 
       transformer.replace(rule, function (err) {
-        expect(fs.writeFile.callCount).to.equal(1);
-        expect(fs.writeFile.calledWith('/etc/file3.txt')).to.be.true();
+        expect(sed.callCount).to.equal(1);
+        expect(sed.calledWith('a', 'b', '/etc/file3.txt')).to.be.true();
         done();
       });
     });
@@ -265,9 +232,7 @@ describe('Transformer', function() {
         ]
       };
 
-      fs.readFileSync.returns('a');
-      fs.readFile.yieldsAsync(null, 'a');
-
+      var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'diff').yields();
@@ -294,9 +259,7 @@ describe('Transformer', function() {
         exclude: ['file1.txt']
       };
 
-      fs.readFileSync.returns('a');
-      fs.readFile.yieldsAsync(null, 'a');
-
+      var sed = sinon.stub(transformer.driver, 'sed').yields();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'diff').yields();
@@ -312,7 +275,7 @@ describe('Transformer', function() {
         expect(warnings.length).to.equal(1);
         expect(warnings[0].rule).to.equal(rule);
         expect(warnings[0].message).to.equal('All results were excluded.');
-        expect(fs.writeFile.callCount).to.equal(0);
+        expect(sed.callCount).to.equal(0);
         done();
       });
     });
@@ -323,9 +286,6 @@ describe('Transformer', function() {
         search: 'awesome',
         replace: 'super'
       };
-
-      fs.readFileSync.returns('awesome');
-      fs.readFile.yieldsAsync(null, 'awesome');
 
       var copy = sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'sed').yields();
@@ -360,21 +320,19 @@ describe('Transformer', function() {
         search: 'awesome',
         replace: 'super'
       };
-
-      fs.readFileSync.returns('awesome');
-      fs.readFile.yieldsAsync(null, 'awesome');
-
       sinon.stub(transformer.driver, 'grep').yields(null, [
         '/etc/file.txt',
         '/etc/file.txt',
       ].join('\n'));
-
+      var sed = sinon.stub(transformer.driver, 'sed')
+        .returns('command')
+        .yields();
       sinon.stub(transformer.driver, 'copy').yields(new Error('Copy error'));
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'diff').yields();
 
       transformer.replace(rule, function (err) {
-        expect(fs.writeFile.callCount).to.equal(0);
+        expect(sed.callCount).to.equal(0);
         done();
       });
     });
@@ -386,12 +344,10 @@ describe('Transformer', function() {
         replace: 'beta'
       };
 
-      fs.readFileSync.returns('alpha');
-      fs.readFile.yieldsAsync(null, 'alpha');
-
       var error = new Error('Totally a real error');
       error.code = 3;
       var diff = sinon.stub(transformer.driver, 'diff').yields(error);
+      sinon.stub(transformer.driver, 'sed').yieldsAsync();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'remove').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
@@ -413,12 +369,9 @@ describe('Transformer', function() {
         search: 'alpha',
         replace: 'beta'
       };
-
-      fs.readFileSync.returns('alpha');
-      fs.readFile.yieldsAsync(null, 'alpha');
-
       var remove = sinon.stub(transformer.driver, 'remove').yieldsAsync();
       sinon.stub(transformer.driver, 'diff').yields();
+      sinon.stub(transformer.driver, 'sed').yieldsAsync();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         '/etc/file1.txt',
@@ -436,40 +389,37 @@ describe('Transformer', function() {
         expect(remove.callCount).to.equal(3);
         filenames.forEach(function (name) {
           var originalName = name + Transformer.ORIGINAL_POSTFIX;
-          expect(remove.calledWith(originalName)).to.be.true();
+          var dotLastName = name + '.last';
+          expect(remove.calledWith(originalName + ' ' + dotLastName))
+            .to.be.true();
         });
         done();
       });
     });
 
-    it('should gracefully handle file read errors', function(done) {
-      var error = new Error('sup?');
+    it('should only add the rule to the result script once', function(done) {
       var rule = {
         action: 'replace',
-        search: 'alpha',
-        replace: 'beta'
+        search: 'darn',
+        replace: 'yankees'
       };
-
-      fs.readFileSync.returns('alpha');
-      fs.readFile.yieldsAsync(error);
-
-      sinon.stub(transformer.driver, 'remove').yieldsAsync();
+      var remove = sinon.stub(transformer.driver, 'remove').yieldsAsync();
       sinon.stub(transformer.driver, 'diff').yields();
+      sinon.stub(transformer.driver, 'sed').yieldsAsync();
       sinon.stub(transformer.driver, 'copy').yields();
       sinon.stub(transformer.driver, 'grep').yields(null, [
         '/etc/file1.txt',
         '/etc/file2.txt',
-        '/etc/file3.txt'
+        '/etc/file3.txt',
+        '/etc/file4.txt',
+        '/etc/file5.txt',
+        '/etc/file6.txt'
       ].join('\n'));
 
-      var filenames = [
-        '/etc/file1.txt',
-        '/etc/file2.txt',
-        '/etc/file3.txt'
-      ];
+      sinon.spy(transformer.script, 'addRule');
 
-      transformer.replace(rule, function (err) {
-        expect(err).to.equal(error);
+      transformer.replace(rule, function () {
+        expect(transformer.script.addRule.calledOnce).to.be.true();
         done();
       });
     });
