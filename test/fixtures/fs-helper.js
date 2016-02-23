@@ -1,20 +1,20 @@
-'use strict';
+'use strict'
 
-var fs = require('fs');
-var path = require('path');
-var childProcess = require('child_process');
+var fs = require('fs')
+var path = require('path')
+var childProcess = require('child_process')
 
 /**
  * Path to the mock used as a basis for testing filesystem transformations.
  * @type {string}
  */
-var mockPath = path.resolve(__dirname, 'root');
+var mockPath = path.resolve(__dirname, 'root')
 
 /**
  * Path to the working test directory upon which to perform transformations.
  * @type {string}
  */
-var testPath = path.resolve(__dirname, 'test');
+var testPath = path.resolve(__dirname, 'test')
 
 /**
  * @module fs-transform:test:fs-helper
@@ -31,22 +31,22 @@ module.exports = {
   read: read,
   readMock: readMock,
   writeFile: writeFile
-};
+}
 
 /**
  * Creates a testing root directory.
  * @param {function} cb Callback to execute after creating the directory.
  */
-function createTestDir(cb) {
-  childProcess.exec(['cp -r', mockPath, testPath].join(' '), cb);
+function createTestDir (cb) {
+  childProcess.exec(['cp -r', mockPath, testPath].join(' '), cb)
 }
 
 /**
  * Removes the testing root directory.
  * @param {function} cb Callback to execute after removing the directory.
  */
-function removeTestDir(cb) {
-  childProcess.exec(['rm -rf', testPath].join(' '), cb);
+function removeTestDir (cb) {
+  childProcess.exec(['rm -rf', testPath].join(' '), cb)
 }
 
 /**
@@ -55,8 +55,8 @@ function removeTestDir(cb) {
  * @param {string} filename Filename to test.
  * @return {boolean} `true` if the file exists, `false` otherwise.
  */
-function exists(filename) {
-  return fs.existsSync(path.resolve(testPath, filename));
+function exists (filename) {
+  return fs.existsSync(path.resolve(testPath, filename))
 }
 
 /**
@@ -65,13 +65,13 @@ function exists(filename) {
  * @param {string} b Filename of the second file relative to the test directory.
  * @param {function} cb Callback to execute with the diff between the files.
  */
-function diff(a, b, cb) {
+function diff (a, b, cb) {
   var command = [
     'diff',
     path.resolve(testPath, a),
     path.resolve(testPath, b)
-  ].join(' ');
-  childProcess.exec(command, cb);
+  ].join(' ')
+  childProcess.exec(command, cb)
 }
 
 /**
@@ -81,13 +81,13 @@ function diff(a, b, cb) {
  * @param {string} originalFile File in the original root directory mock.
  * @param {function} cb Callback to execute with the diff of the files.
  */
-function mockDiff(newFile, originalFile, cb) {
+function mockDiff (newFile, originalFile, cb) {
   var command = [
     'diff',
     path.resolve(testPath, newFile),
     path.resolve(mockPath, originalFile)
-  ].join(' ');
-  childProcess.exec(command, cb);
+  ].join(' ')
+  childProcess.exec(command, cb)
 }
 
 /**
@@ -96,11 +96,11 @@ function mockDiff(newFile, originalFile, cb) {
  * @param {object} [options] Options to send to f.readFileSync.
  * @return {string} The contents of the file.
  */
-function read(filename, options) {
+function read (filename, options) {
   return fs.readFileSync(
     path.resolve(testPath, filename),
     options
-  ).toString();
+  ).toString()
 }
 
 /**
@@ -109,16 +109,16 @@ function read(filename, options) {
  * @param {object} [options] Options to send to f.readFileSync.
  * @return The contents of the file.
  */
-function readMock(filename, options) {
+function readMock (filename, options) {
   return fs.readFileSync(
     path.resolve(mockPath, filename),
     options
-  ).toString();
+  ).toString()
 }
 
 /**
  * Alias for system `fs.writeFile`.
  */
-function writeFile() {
-  return fs.writeFile.apply(this, arguments);
+function writeFile () {
+  return fs.writeFile.apply(this, arguments)
 }
