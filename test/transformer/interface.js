@@ -1,59 +1,57 @@
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
-var after = lab.after;
-var afterEach = lab.afterEach;
-var Code = require('code');
-var expect = Code.expect;
-var Transformer = require('../../lib/transformer');
+'use strict'
 
-describe('Transformer', function() {
-  describe('interface', function() {
-    it('should expose the Transformer class', function (done) {
-      expect(Transformer).to.exist();
-      expect(typeof Transformer).to.equal('function');
-      done();
-    });
+var Lab = require('lab')
+var lab = exports.lab = Lab.script()
+var describe = lab.describe
+var it = lab.it
+var Code = require('code')
+var expect = Code.expect
+var Transformer = require('../../lib/transformer')
 
-    it('should expose the `.transform` method', function(done) {
-      expect(Transformer.transform).to.exist();
-      expect(typeof Transformer.transform).to.equal('function');
-      done();
-    });
-  }); // end 'interface'
+describe('Transformer', () => {
+  describe('interface', () => {
+    it('should expose the Transformer class', (done) => {
+      expect(Transformer).to.exist()
+      expect(typeof Transformer).to.equal('function')
+      done()
+    })
 
-  describe('transform', function() {
-    it('should catch rules errors during instantiation', function (done) {
-      Transformer.transform('/tmp', 23, function (err) {
-        expect(err).to.exist();
-        done();
-      });
-    });
+    it('should expose the `.transform` method', (done) => {
+      expect(Transformer.transform).to.exist()
+      expect(typeof Transformer.transform).to.equal('function')
+      done()
+    })
+  }) // end 'interface'
 
-    it('should catch JSON parse errors during instantiation', function (done) {
-      Transformer.transform('/tmp', '{sou[p]', function (err) {
-        expect(err).to.exist();
-        done();
-      });
-    });
-  }); // end 'transform'
+  describe('transform', () => {
+    it('should catch rules errors during instantiation', (done) => {
+      Transformer.transform('/tmp', 23, (err) => {
+        expect(err).to.exist()
+        done()
+      })
+    })
 
-  describe('dry', function () {
-    it('should catch rules errors during instantiation', function (done) {
-      Transformer.dry('/tmp', 23, function (err) {
-        expect(err).to.exist();
-        done();
-      });
-    });
+    it('should catch JSON parse errors during instantiation', (done) => {
+      Transformer.transform('/tmp', '{sou[p]', (err) => {
+        expect(err).to.exist()
+        done()
+      })
+    })
+  }) // end 'transform'
 
-    it('should catch JSON parse errors during instantiation', function (done) {
-      Transformer.dry('/tmp', '{sou[p]', function (err) {
-        expect(err).to.exist();
-        done();
-      });
-    });
+  describe('dry', () => {
+    it('should catch rules errors during instantiation', (done) => {
+      Transformer.dry('/tmp', 23, (err) => {
+        expect(err).to.exist()
+        done()
+      })
+    })
+
+    it('should catch JSON parse errors during instantiation', (done) => {
+      Transformer.dry('/tmp', '{sou[p]', (err) => {
+        expect(err).to.exist()
+        done()
+      })
+    })
   })
-});
+})
