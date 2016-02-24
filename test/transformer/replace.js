@@ -113,6 +113,16 @@ describe('Transformer', () => {
       transformer.replace(rule, noop)
     })
 
+    it('should not proceed if grep fails', (done) => {
+      var rule = { action: 'replace', search: 'a', replace: 'b' }
+      var grepError = new Error('Grep error')
+      sinon.stub(transformer.driver, 'grep').yields(grepError)
+      transformer.replace(rule, (err) => {
+        expect(err).to.equal(grepError)
+        done()
+      })
+    })
+
     it('should call sed on each file in the result set', (done) => {
       var sed = sinon.stub(transformer.driver, 'sed').yields()
       sinon.stub(transformer.driver, 'copy').yields()
@@ -326,12 +336,13 @@ describe('Transformer', () => {
       var sed = sinon.stub(transformer.driver, 'sed')
         .returns('command')
         .yields()
-      sinon.stub(transformer.driver, 'copy').yields(new Error('Copy error'))
+      var copyError = new Error('Copy error')
+      sinon.stub(transformer.driver, 'copy').yieldsAsync(copyError)
       sinon.stub(transformer.driver, 'remove').yields()
       sinon.stub(transformer.driver, 'diff').yields()
 
       transformer.replace(rule, (err) => {
-        if (err) { return done(err) }
+        expect(err).to.equal(copyError)
         expect(sed.callCount).to.equal(0)
         done()
       })
