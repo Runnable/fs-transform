@@ -1,9 +1,7 @@
-'use strict';
-
-var Transformer = require('./lib/transformer.js');
+'use strict'
 
 /**
  * @module fs-transform
  * @author Ryan Sandor Richards
  */
-module.exports = Transformer;
+module.exports = require('./lib/transformer.js')
