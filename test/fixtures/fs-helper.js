@@ -1,8 +1,8 @@
 'use strict'
 
-var fs = require('fs')
-var path = require('path')
-var childProcess = require('child_process')
+const fs = require('fs')
+const path = require('path')
+const childProcess = require('child_process')
 
 /**
  * Path to the mock used as a basis for testing filesystem transformations.
@@ -30,7 +30,9 @@ module.exports = {
   mockDiff: mockDiff,
   read: read,
   readMock: readMock,
-  writeFile: writeFile
+  writeFile: writeFile,
+  createDotGit: createDotGit,
+  removeDotGit: removeDotGit
 }
 
 /**
@@ -121,4 +123,33 @@ function readMock (filename, options) {
  */
 function writeFile () {
   return fs.writeFile.apply(this, arguments)
+}
+
+/*
+ * Used to create the special .git directory.
+ */
+const gitFileContent = '(this should always be ignored): only_in_gitfile'
+const gitPath = path.resolve(mockPath, '.git')
+const gitFilePath = path.resolve(gitPath, 'some-file')
+
+/**
+ * Creates a special .git directory in the fixtures root for testing whether or
+ * not we ignore .git files.
+ * @param {function} done Callback to execute when the special directory and
+ *   file have been created.
+ */
+function createDotGit (done) {
+  childProcess.exec([
+    `mkdir -p ${gitPath}`,
+    `echo '${gitFileContent}' > ${gitFilePath}`
+  ].join(';'), done)
+}
+
+/**
+ * Removes the special .git directory in the fixtures root.
+ * @param {function} done Callback to execute when the special directory and
+ *   file have been removed.
+ */
+function removeDotGit (done) {
+  childProcess.exec(`rm -rf ${gitPath}`, done)
 }

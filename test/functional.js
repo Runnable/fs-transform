@@ -4,7 +4,9 @@ var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var describe = lab.describe
 var it = lab.it
+var before = lab.before
 var beforeEach = lab.beforeEach
+var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
@@ -270,7 +272,10 @@ describe('functional', () => {
   }) // end 'results'
 
   describe('scripts', () => {
-    var scriptPath = fs.mock + '.script'
+    const scriptPath = fs.mock + '.script'
+
+    before(fs.createDotGit)
+    after(fs.removeDotGit)
 
     beforeEach((done) => {
       childProcess.exec('cp -r ' + fs.mock + ' ' + scriptPath, done)
