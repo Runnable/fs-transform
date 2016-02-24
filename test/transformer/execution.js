@@ -10,7 +10,6 @@ var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
 var noop = require('101/noop')
-var createCount = require('callback-count')
 
 var Transformer = require('../../lib/transformer')
 
@@ -149,14 +148,12 @@ describe('Transformer', () => {
     })
 
     it('should yield an Error when given a null or undefined rule', (done) => {
-      var count = createCount(2, done)
       transformer.applyRule(null, (err) => {
         expect(err).to.exist()
-        count.next()
-      })
-      transformer.applyRule(undefined, (err) => {
-        expect(err).to.exist()
-        count.next()
+        transformer.applyRule(undefined, (err) => {
+          expect(err).to.exist()
+          done()
+        })
       })
     })
 
