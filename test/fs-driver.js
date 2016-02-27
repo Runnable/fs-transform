@@ -35,12 +35,6 @@ describe('fs-driver', () => {
     })
   })
 
-  describe('escape', () => {
-    it('should remove harmful characters', (done) => {
-      let path = '/\'; rm -rf /tmp/wowowowo'
-    })
-  })
-
   describe('absoluteResultsPath', () => {
     var driver = new FsDriver('/tmp')
 
@@ -160,7 +154,7 @@ describe('fs-driver', () => {
     })
 
     it('should use driver.exec to perform file moves', (done) => {
-      var command = 'mv /tmp/foo /tmp/bar'
+      var command = 'mv \'/tmp/foo\' \'/tmp/bar\''
       driver.move('foo', 'bar', () => {
         expect(driver.exec.calledOnce).to.be.true()
         expect(driver.exec.calledWith(command)).to.be.true()
@@ -169,7 +163,7 @@ describe('fs-driver', () => {
     })
 
     it('should use driver.exec to perform file copies', (done) => {
-      var command = 'cp /tmp/foo /tmp/bar'
+      var command = 'cp \'/tmp/foo\' \'/tmp/bar\''
       driver.copy('foo', 'bar', () => {
         expect(driver.exec.calledOnce).to.be.true()
         expect(driver.exec.calledWith(command)).to.be.true()
