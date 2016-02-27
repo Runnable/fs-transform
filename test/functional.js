@@ -176,6 +176,19 @@ describe('functional', () => {
         done()
       })
     })
+
+    it('should correctly set diffs by filename', (done) => {
+      var rules = [
+        { action: 'replace', search: 'Exampel', replace: 'Shamp' }
+      ]
+      Transformer.transform(fs.path, rules, (err, transformer) => {
+        if (err) { return done(err) }
+        let result = transformer.results[0]
+        expect(result.diffs['/A'].startsWith('--- /A')).to.be.true()
+        expect(result.diffs['/B'].startsWith('--- /B')).to.be.true()
+        done()
+      })
+    })
   }) // end 'replace'
 
   describe('results', () => {
