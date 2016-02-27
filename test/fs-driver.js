@@ -14,14 +14,6 @@ var FsDriver = require('../lib/fs-driver')
 var fs = require('fs')
 
 describe('fs-driver', () => {
-  describe('interface', () => {
-    it('should export the `FsDriver` class', (done) => {
-      expect(FsDriver).to.exist()
-      expect(typeof FsDriver).to.equal('function')
-      done()
-    })
-  }) // end 'interface'
-
   describe('constructor', () => {
     it('should construct a new fs driver with a given root', (done) => {
       var root = '/tmp'
@@ -44,52 +36,46 @@ describe('fs-driver', () => {
   })
 
   describe('escape', () => {
-    it('should ignore non-strings', (done) => {
-      var x = 0
-      var y = {}
-      var z = /woo/g
-      expect(FsDriver.escape(x)).to.equal(x)
-      expect(FsDriver.escape(y)).to.equal(y)
-      expect(FsDriver.escape(z)).to.equal(z)
-      done()
+    it('should remove harmful characters', (done) => {
+      let path = '/\'; rm -rf /tmp/wowowowo'
     })
   })
 
-  describe('absolutePath', () => {
+  describe('absoluteResultsPath', () => {
     var driver = new FsDriver('/tmp')
 
     it('should return an absolute path for a relative path', (done) => {
-      expect(driver.absolutePath('foo.txt'))
+      expect(driver.absoluteResultsPath('foo.txt'))
         .to.equal('/tmp/foo.txt')
-      expect(driver.absolutePath('./../neat.txt'))
+      expect(driver.absoluteResultsPath('./../neat.txt'))
         .to.equal('/tmp/./../neat.txt')
       done()
     })
 
     it('should return the same path for an absolute path', (done) => {
-      expect(driver.absolutePath('/this/path'))
+      expect(driver.absoluteResultsPath('/this/path'))
         .to.equal('/this/path')
-      expect(driver.absolutePath('/etc/init.d/../foo'))
+      expect(driver.absoluteResultsPath('/etc/init.d/../foo'))
         .to.equal('/etc/init.d/../foo')
       done()
     })
 
     it('should return null if given a non string path', (done) => {
-      expect(driver.absolutePath()).to.be.null()
-      expect(driver.absolutePath(undefined)).to.be.null()
-      expect(driver.absolutePath(null)).to.be.null()
-      expect(driver.absolutePath({})).to.be.null()
-      expect(driver.absolutePath(42)).to.be.null()
+      expect(driver.absoluteResultsPath()).to.be.null()
+      expect(driver.absoluteResultsPath(undefined)).to.be.null()
+      expect(driver.absoluteResultsPath(null)).to.be.null()
+      expect(driver.absoluteResultsPath({})).to.be.null()
+      expect(driver.absoluteResultsPath(42)).to.be.null()
       done()
     })
 
-    it('should use the working directory if one is present', (done) => {
-      expect(driver.absolutePath('foo')).to.equal('/tmp/foo')
-      driver.working = '/etc'
-      expect(driver.absolutePath('foo')).to.equal('/etc/foo')
+    it('should use the results path if one is present', (done) => {
+      expect(driver.absoluteResultsPath('foo')).to.equal('/tmp/foo')
+      driver.resultsPath = '/etc'
+      expect(driver.absoluteResultsPath('foo')).to.equal('/etc/foo')
       done()
     })
-  }) // end 'absolutePath'
+  }) // end 'absoluteResultsPath'
 
   describe('exec', () => {
     var driver = new FsDriver('/root/dir')
@@ -122,10 +108,10 @@ describe('fs-driver', () => {
       })
     })
 
-    it('should replace working paths with root in returned commands', (done) => {
+    it('should replace results paths with root in returned commands', (done) => {
       var expected = 'command /root/dir/a /root/dir/b /root/dir/c'
       var execute = 'command /work/dir/a /work/dir/b /work/dir/c'
-      driver.working = '/work/dir'
+      driver.resultsPath = '/work/dir'
       driver.exec(execute, (err, output, command) => {
         expect(err).to.not.exist()
         expect(command).to.equal(expected)
@@ -191,59 +177,6 @@ describe('fs-driver', () => {
       })
     })
 
-    describe('grep', () => {
-      it('should use driver.exec to perform the grep', (done) => {
-        var command = 'grep -rlI \'search\' /tmp'
-        driver.grep('search', () => {
-          expect(driver.exec.calledOnce).to.be.true()
-          expect(driver.exec.calledWith(command)).to.be.true()
-          done()
-        })
-      })
-
-      it('should properly escape search patterns', (done) => {
-        driver.grep('\\lambda\'', (err) => {
-          if (err) { return done(err) }
-          var command = 'grep -rlI \'\\\\lambda\\\'\' /tmp'
-          expect(driver.exec.calledWith(command))
-            .to.be.true()
-          done()
-        })
-      })
-
-      it('should use the working directory when one is supplied', (done) => {
-        var command = 'grep -rlI \'search\' /working'
-        driver.working = '/working'
-        driver.grep('search', (err) => {
-          if (err) { return done(err) }
-          expect(driver.exec.calledWith(command)).to.be.true()
-          driver.exec.restore()
-        })
-        done()
-      })
-    }) // end 'grep'
-
-    describe('sed', () => {
-      it('should use driver.exec to perform the sed', (done) => {
-        var command = 'sed -i.last \'s/bar/baz/g\' /tmp/file1.txt'
-        driver.sed('bar', 'baz', 'file1.txt', () => {
-          expect(driver.exec.calledOnce).to.be.true()
-          expect(driver.exec.calledWith(command)).to.be.true()
-          done()
-        })
-      })
-
-      it('should properly escape search and replace', (done) => {
-        driver.sed('/foo', '/bar', 'example.txt', (err) => {
-          if (err) { return done(err) }
-          var command = 'sed -i.last \'s/\\/foo/\\/bar/g\' /tmp/example.txt'
-          expect(driver.exec.calledWith(command))
-            .to.be.true()
-          done()
-        })
-      })
-    }) // end 'sed'
-
     describe('exists', () => {
       it('should use `fs.existsSync` to perform the check', (done) => {
         var stub = sinon.stub(fs, 'existsSync')
@@ -298,11 +231,11 @@ describe('fs-driver', () => {
       })
 
       it('should have paths that are relative to the root directory', (done) => {
-        var absoluteDiff = driver.working + '\n' + driver.root + '\n'
+        var absoluteDiff = driver.workingPath + '\n' + driver.root + '\n'
         driver.exec.yieldsAsync(null, absoluteDiff, 'command')
         driver.diff('a', 'b', (err, diff) => {
           expect(err).to.not.exist()
-          expect(diff.indexOf(driver.working)).to.equal(-1)
+          expect(diff.indexOf(driver.workingPath)).to.equal(-1)
           expect(diff.indexOf(driver.root)).to.equal(-1)
           done()
         })
@@ -313,7 +246,7 @@ describe('fs-driver', () => {
       sinon.stub(driver, 'diff').yieldsAsync()
       driver.workingDiff((err, result) => {
         if (err) { return done(err) }
-        expect(driver.diff.calledWith(driver.root, driver.working))
+        expect(driver.diff.calledWith(driver.root, driver.workingPath))
           .to.be.true()
         done()
       })
@@ -336,121 +269,5 @@ describe('fs-driver', () => {
         done()
       })
     })
-
-    describe('findWorkingDirectory', () => {
-      beforeEach((done) => {
-        driver.root = '/etc/init.d'
-        sinon.stub(driver, 'exists')
-        sinon.stub(Math, 'random')
-          .onFirstCall().returns(0)
-          .onSecondCall().returns(1)
-          .onThirdCall().returns(2)
-        done()
-      })
-
-      afterEach((done) => {
-        Math.random.restore()
-        done()
-      })
-
-      it('should find a new working directory', (done) => {
-        driver.exists.returns(false)
-        var working = driver.findWorkingDirectory()
-        expect(Math.random.calledOnce).to.be.true()
-        expect(working).to.equal('/tmp/.init.d.fs-work.0')
-        done()
-      })
-
-      it('should not attempt to use a working directory that already exists', (done) => {
-        driver.exists
-          .onFirstCall().returns(true)
-          .onSecondCall().returns(true)
-          .onThirdCall().returns(false)
-        expect(driver.findWorkingDirectory())
-          .to.equal('/tmp/.init.d.fs-work.2')
-        done()
-      })
-    })
-
-    describe('createWorkingDirectory', () => {
-      beforeEach((done) => {
-        driver.root = '/etc/init.d'
-        sinon.stub(driver, 'exists').returns(false)
-        sinon.stub(Math, 'random').returns(0)
-        done()
-      })
-
-      afterEach((done) => {
-        Math.random.restore()
-        done()
-      })
-
-      it('should set the working directory', (done) => {
-        driver.createWorkingDirectory((err) => {
-          if (err) { return done(err) }
-          expect(driver.working).to.equal('/tmp/.init.d.fs-work.0')
-          done()
-        })
-      })
-
-      it('should create the working directory with driver.exec', (done) => {
-        var command = 'cp -r /etc/init.d /tmp/.init.d.fs-work.0'
-        driver.createWorkingDirectory((err) => {
-          if (err) { return done(err) }
-          expect(driver.exec.calledWith(command)).to.be.true()
-          done()
-        })
-      })
-
-      it('should yield system errors to the supplied callback', (done) => {
-        var error = new Error('Errorz')
-        driver.exec.yields(error)
-        driver.createWorkingDirectory((err) => {
-          expect(err).to.equal(error)
-          done()
-        })
-      })
-    }) // end 'createWorkingDirectory'
-
-    describe('removeWorkingDirectory', () => {
-      beforeEach((done) => {
-        sinon.stub(driver, 'removeRecursive').yieldsAsync()
-        done()
-      })
-
-      afterEach((done) => {
-        driver.removeRecursive.restore()
-        done()
-      })
-
-      it('should remove the working directory', (done) => {
-        driver.working = '/tmp/x'
-        driver.removeWorkingDirectory((err) => {
-          if (err) { return done(err) }
-          expect(driver.removeRecursive.calledWith('/tmp/x')).to.be.true()
-          expect(driver.working).to.be.null()
-          done()
-        })
-      })
-
-      it('should not remove a working directory if none exists', (done) => {
-        driver.working = null
-        driver.removeWorkingDirectory((err) => {
-          if (err) { return done(err) }
-          expect(driver.removeRecursive.callCount).to.equal(0)
-          done()
-        })
-      })
-
-      it('should yield system errors to the supplied callback', (done) => {
-        var error = new Error('Remove error')
-        driver.removeRecursive.yields(error)
-        driver.working = '/woot/sauce'
-        driver.removeWorkingDirectory((err) => {
-          expect(err).to.equal(error)
-          done()
-        })
-      })
-    }) // end 'removeWorkingDirectory'
   }) // end 'file system'
 }) // end 'fs-driver'
