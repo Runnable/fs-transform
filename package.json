@@ -37,7 +37,8 @@
     "async": "^1.5.2",
     "bluebird": "^3.3.1",
     "debug": "^2.2.0",
-    "findit": "^2.0.0"
+    "findit": "^2.0.0",
+    "replacestream": "^4.0.0"
   },
   "devDependencies": {
     "code": "^2.1.0",
