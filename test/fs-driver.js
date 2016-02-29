@@ -186,6 +186,7 @@ describe('fs-driver', () => {
 
     it('should correctly set the working path', (done) => {
       driver.createWorkingDirectory((err) => {
+        expect(err).to.not.exist()
         expect(driver.workingPath).to.equal(workingPath)
         done()
       })
@@ -357,7 +358,6 @@ describe('fs-driver', () => {
       done()
     })
   }) // end 'absoluteResultsPath'
-
 
   describe('exec', () => {
     var driver = new FsDriver('/root/dir')

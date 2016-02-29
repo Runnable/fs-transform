@@ -56,7 +56,7 @@ describe('Transformer', () => {
         files: ['A.txt', 'B.txt', 'C.txt']
       }
       var expectedFiles = rule.files.map((file) => {
-        return transformer.driver.absolutePath(file)
+        return transformer.driver.absoluteWorkingPath(file)
       })
       transformer.exclude(rule, (err) => {
         if (err) { return done(err) }
