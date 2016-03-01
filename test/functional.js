@@ -173,30 +173,19 @@ describe('functional', () => {
         expect(linesC[5]).to.equal('Woof')
         expect(linesC[7]).to.equal('Woof')
         expect(dataB.match('Woof')).to.be.null()
-        expect(transformer.warnings).to.not.be.empty()
-        expect(transformer.warnings[0].message)
-          .to.equal('Unused exclude.')
         done()
       })
     })
 
-    it('should warn if excludes all results', (done) => {
-      var search = 'File A'
-      var replace = 'File X'
-      var rules = [{
-        action: 'replace',
-        search: search,
-        replace: replace,
-        exclude: ['A']
-      }]
+    it('should correctly set diffs by filename', (done) => {
+      var rules = [
+        { action: 'replace', search: 'Exampel', replace: 'Shamp' }
+      ]
       Transformer.transform(fs.path, rules, (err, transformer) => {
         if (err) { return done(err) }
-        var dataA = fs.read('A')
-        expect(dataA.match(search)).to.not.be.null()
-        expect(dataA.match(replace)).to.be.null()
-        expect(transformer.warnings).to.not.be.empty()
-        expect(transformer.warnings[0].message)
-          .to.equal('All results were excluded.')
+        let result = transformer.results[0]
+        expect(result.diffs['/A'].startsWith('--- /A')).to.be.true()
+        expect(result.diffs['/B'].startsWith('--- /B')).to.be.true()
         done()
       })
     })

@@ -43,14 +43,15 @@ describe('Transformer', () => {
       sinon.stub(transformer, 'applyRule').yieldsAsync()
 
       var driverMethods = [
-        'createWorkingDirectory',
-        'removeWorkingDirectory',
+        'setup',
+        'teardown',
         'diff',
         'move',
-        'removeRecursive',
         'workingDiff',
+        'resultsDiff',
         'hasAllCommands',
-        'hasCommand'
+        'hasCommand',
+        'commitResults'
       ]
 
       driverMethods.forEach((method) => {
@@ -64,23 +65,23 @@ describe('Transformer', () => {
 
     it('should check for all required commands', (done) => {
       transformer._execute(false, (err) => {
-        if (err) { return done(err) }
+        expect(err).to.not.exist()
         expect(driver.hasAllCommands.calledOnce).to.be.true()
         done()
       })
     })
 
-    it('should create a working directory', (done) => {
+    it('should setup the filesystem driver', (done) => {
       transformer._execute(false, (err) => {
-        if (err) { return done(err) }
-        expect(driver.createWorkingDirectory.calledOnce).to.be.true()
+        expect(err).to.not.exist()
+        expect(driver.setup.calledOnce).to.be.true()
         done()
       })
     })
 
     it('should apply all given transformer rules', (done) => {
       transformer._execute(false, (err) => {
-        if (err) { return done(err) }
+        expect(err).to.not.exist()
         var applyRule = transformer.applyRule
         expect(applyRule.callCount).to.equal(3)
         expect(applyRule.calledWith(1)).to.be.true()
@@ -94,7 +95,7 @@ describe('Transformer', () => {
       var diff = 'the full diff'
       driver.workingDiff.yieldsAsync(null, diff)
       transformer._execute(false, (err) => {
-        if (err) { return done(err) }
+        expect(err).to.not.exist()
         expect(driver.workingDiff.callCount).to.equal(1)
         done()
       })
@@ -109,30 +110,35 @@ describe('Transformer', () => {
       })
     })
 
-    it('should commit changes when instructed to do so', (done) => {
-      transformer._execute(true, (err) => {
-        if (err) { return done(err) }
-        expect(driver.removeWorkingDirectory.callCount).to.equal(0)
-        expect(driver.move.callCount).to.equal(2)
-        expect(driver.move.calledWith(driver.working, driver.root))
-          .to.be.true()
+    it('should tearndown the filesystem driver', (done) => {
+      transformer._execute(false, (err) => {
+        expect(err).to.not.exist()
+        expect(driver.teardown.calledWith(false)).to.be.true()
         done()
       })
     })
 
-    it('should remove the working directory in dry mode', (done) => {
-      transformer._execute(false, (err) => {
-        if (err) { return done(err) }
-        expect(driver.move.callCount).to.equal(0)
-        expect(driver.removeWorkingDirectory.callCount).to.equal(1)
+    it('should commit changes when instructed to do so', (done) => {
+      transformer._execute(true, (err) => {
+        expect(err).to.not.exist()
+        expect(driver.teardown.calledWith(true)).to.be.true()
         done()
       })
     })
 
     it('should supply the transformer as the second parameter to the callback', (done) => {
       transformer._execute(false, (err, t) => {
-        if (err) { return done(err) }
+        expect(err).to.not.exist()
         expect(t).to.equal(transformer)
+        done()
+      })
+    })
+
+    it('should yield an error if a rule yields an error', (done) => {
+      const error = new Error('mah errorz')
+      transformer.applyRule.yields(error)
+      transformer._execute(false, (err, t) => {
+        expect(err).to.equal(error)
         done()
       })
     })
