@@ -6,7 +6,7 @@ var describe = lab.describe
 var it = lab.it
 var Code = require('code')
 var expect = Code.expect
-var Transformer = require('../../lib/transformer')
+var Transformer = require('../../../lib/transformer')
 
 describe('Transformer', () => {
   describe('interface', () => {

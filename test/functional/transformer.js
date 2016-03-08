@@ -10,12 +10,13 @@ var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
-var fs = require('./fixtures/fs-helper')
-var Transformer = require('../index.js')
+var fs = require('../fixtures/fs-helper')
 var async = require('async')
 var childProcess = require('child_process')
 
 var debug = require('debug')('fs-transform:test')
+
+var Transformer = require('../../index')
 
 describe('functional', () => {
   beforeEach(fs.createTestDir)
@@ -218,7 +219,7 @@ describe('functional', () => {
       Transformer.transform(fs.path, rules, (err, transformer) => {
         if (err) { return done(err) }
         var generatedScript = transformer.getScript()
-        var script = fs.read('../script.sh')
+        var script = fs.read('../../fixtures/script.sh')
         expect(generatedScript).to.equal(script)
         done()
       })
@@ -233,7 +234,7 @@ describe('functional', () => {
 
       Transformer.transform(fs.path, rules, (err, transformer) => {
         if (err) { return done(err) }
-        var expected = fs.read('../diff').split('\n').filter((line) => {
+        var expected = fs.read('../../fixtures/diff').split('\n').filter((line) => {
           return line.match(/^[+-][^+-]/)
         }).join('\n')
         var diff = transformer.getDiff().split('\n').filter((line) => {
@@ -316,7 +317,7 @@ describe('functional', () => {
       ]
       async.series([
         function runScript (next) {
-          var command = 'bash ../script.sh'
+          var command = 'bash ../../fixtures/script.sh'
           childProcess.exec(command, {cwd: scriptPath}, (err, data) => {
             next(err)
           })

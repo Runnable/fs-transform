@@ -10,7 +10,7 @@ var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
 
-var Transformer = require('../../lib/transformer')
+var Transformer = require('../../../lib/transformer')
 
 describe('Transformer', () => {
   describe('copy', () => {

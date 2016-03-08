@@ -10,8 +10,8 @@ const Code = require('code')
 const expect = Code.expect
 const sinon = require('sinon')
 
-const Transformer = require('../../lib/transformer')
-const Replacer = require('../../lib/replacer')
+const Transformer = require('../../../lib/transformer')
+const Replacer = require('../../../lib/replacer')
 
 describe('Transformer', () => {
   describe('replace', () => {

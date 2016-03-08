@@ -10,7 +10,7 @@ var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
 
-var ScriptGenerator = require('../lib/script-generator')
+var ScriptGenerator = require('../../lib/script-generator')
 var fs = require('fs')
 
 describe('ScriptGenerator', () => {

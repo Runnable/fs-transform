@@ -9,8 +9,8 @@ var expect = Code.expect
 var sinon = require('sinon')
 var noop = require('101/noop')
 
-var Transformer = require('../../lib/transformer')
-var Warning = require('../../lib/warning')
+var Transformer = require('../../../lib/transformer')
+var Warning = require('../../../lib/warning')
 
 describe('Transformer', () => {
   describe('pushResult', () => {

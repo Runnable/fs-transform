@@ -10,7 +10,7 @@ var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
 var childProcess = require('child_process')
-var FsDriver = require('../lib/fs-driver')
+var FsDriver = require('../../lib/fs-driver')
 var fs = require('fs')
 
 describe('fs-driver', () => {
@@ -108,23 +108,29 @@ describe('fs-driver', () => {
       driver.workingPath = '/omg'
       driver.resultsPath = '/wow'
       sinon.stub(driver, 'exec').yieldsAsync()
-      rootPath = driver.escapePath(driver.root)
-      backupPath = driver.escapePath(driver.root + '.bak')
-      workingPath = driver.escapePath(driver.workingPath)
-      resultsPath = driver.escapePath(driver.resultsPath)
+      rootPath = driver.root
+      backupPath = driver.root + '.bak'
+      workingPath = driver.workingPath
+      resultsPath = driver.resultsPath
       done()
     })
 
     describe('with commit', () => {
-      beforeEach((done) => { driver.teardown(true, done) })
+      beforeEach((done) => {
+        driver.teardown(true, done)
+      })
 
-      it('should execute the correct commands', (done) => {
-        expect(driver.exec.calledOnce).to.be.true()
-        expect(driver.exec.firstCall.args[0]).to.deep.equal([
-          `mv ${rootPath} ${backupPath}`,
-          `mv ${workingPath} ${rootPath}`,
-          `rm -rf ${backupPath} ${resultsPath}`
-        ].join(' && '))
+      it('should commit changes to the root directory', (done) => {
+        expect(driver.exec.callCount).to.equal(3)
+        expect(driver.exec.firstCall.args.slice(0, 2)).to.deep.equal([
+          'mv', [rootPath, backupPath]
+        ])
+        expect(driver.exec.secondCall.args.slice(0, 2)).to.deep.equal([
+          'mv', [workingPath, rootPath]
+        ])
+        expect(driver.exec.thirdCall.args.slice(0, 2)).to.deep.equal([
+          'rm', ['-rf', backupPath, resultsPath]
+        ])
         done()
       })
     }) // end 'on commit'
@@ -134,10 +140,9 @@ describe('fs-driver', () => {
 
       it('should execute the correct commands', (done) => {
         expect(driver.exec.calledOnce).to.be.true()
-        expect(driver.exec.firstCall.args[0]).to.deep.equal([
-          `rm -rf ${workingPath}`,
-          `rm -rf ${resultsPath}`
-        ].join(' && '))
+        expect(driver.exec.firstCall.args.slice(0, 2)).to.deep.equal([
+          'rm', ['-rf', workingPath, resultsPath]
+        ])
         done()
       })
     }) // end 'on commit'
@@ -172,14 +177,14 @@ describe('fs-driver', () => {
     })
 
     it('should copy the root directory to working directory', (done) => {
-      const source = driver.escapePath(driver.root)
-      const dest = driver.escapePath(workingPath)
+      const source = driver.root
+      const dest = workingPath
       driver.createWorkingDirectory((err) => {
         expect(err).to.not.exist()
         expect(driver.exec.calledOnce).to.be.true()
-        expect(driver.exec.calledWith(
-          `cp -r ${source} ${dest}`
-        )).to.be.true()
+        expect(driver.exec.firstCall.args.slice(0, 2)).to.deep.equal([
+          'cp', ['-r', source, dest]
+        ])
         done()
       })
     })
@@ -238,14 +243,14 @@ describe('fs-driver', () => {
 
     it('should create the correct results directory', (done) => {
       driver.workingPath = '/tmp/workingPath.123'
-      let source = driver.escapePath(driver.workingPath)
-      let dest = driver.escapePath(driver.workingPath + '.results')
+      let source = driver.workingPath
+      let dest = driver.workingPath + '.results'
       driver.createResultsDirectory((err) => {
         expect(err).to.not.exist()
         expect(driver.exec.calledOnce).to.be.true()
-        expect(driver.exec.calledWith(
-          `cp -r ${source} ${dest}`
-        )).to.be.true()
+        expect(driver.exec.firstCall.args.slice(0, 2)).to.deep.equal([
+          'cp', ['-r', source, dest]
+        ])
         done()
       })
     })
@@ -273,15 +278,15 @@ describe('fs-driver', () => {
     })
 
     it('should commit the results directory to the working directory', (done) => {
-      const workingPath = driver.escapePath(driver.workingPath)
-      const resultsPath = driver.escapePath(driver.resultsPath)
       driver.commitResults((err) => {
         expect(err).to.not.exist()
-        expect(driver.exec.calledOnce).to.be.true()
-        expect(driver.exec.calledWith([
-          `rm -rf ${workingPath}`,
-          `cp -r ${resultsPath} ${workingPath}`
-        ].join(' && '))).to.be.true()
+        expect(driver.exec.calledTwice).to.be.true()
+        expect(driver.exec.firstCall.args.slice(0, 2)).to.deep.equal([
+          'rm', ['-rf', driver.workingPath]
+        ])
+        expect(driver.exec.secondCall.args.slice(0, 2)).to.deep.equal([
+          'cp', ['-r', driver.resultsPath, driver.workingPath]
+        ])
         done()
       })
     })
@@ -363,27 +368,29 @@ describe('fs-driver', () => {
     var driver = new FsDriver('/root/dir')
 
     beforeEach((done) => {
-      sinon.stub(childProcess, 'exec').yieldsAsync()
+      sinon.stub(childProcess, 'execFile').yieldsAsync()
       done()
     })
 
     afterEach((done) => {
-      childProcess.exec.restore()
+      childProcess.execFile.restore()
       done()
     })
 
     it('should execute the given command', (done) => {
-      var command = 'cp wow neat'
-      driver.exec(command, (err) => {
+      driver.exec('cp', ['wow', 'neat'], (err) => {
         expect(err).to.not.exist()
-        expect(childProcess.exec.calledWith(command)).to.be.true()
+        expect(childProcess.execFile.calledOnce).to.be.true()
+        expect(childProcess.execFile.firstCall.args.slice(0, 2)).to.deep.equal([
+          'cp', ['wow', 'neat']
+        ])
         done()
       })
     })
 
     it('should provide the command in the callback', (done) => {
       var expected = 'cp gnarly brah'
-      driver.exec(expected, (err, output, command) => {
+      driver.exec('cp', ['gnarly', 'brah'], (err, output, command) => {
         expect(err).to.not.exist()
         expect(command).to.equal(expected)
         done()
@@ -392,19 +399,22 @@ describe('fs-driver', () => {
 
     it('should replace results paths with root in returned commands', (done) => {
       var expected = 'command /root/dir/a /root/dir/b /root/dir/c'
-      var execute = 'command /work/dir/a /work/dir/b /work/dir/c'
       driver.resultsPath = '/work/dir'
-      driver.exec(execute, (err, output, command) => {
-        expect(err).to.not.exist()
-        expect(command).to.equal(expected)
-        delete driver.working
-        done()
-      })
+      driver.exec(
+        'command',
+        ['/work/dir/a', '/work/dir/b', '/work/dir/c'],
+        (err, output, command) => {
+          expect(err).to.not.exist()
+          expect(command).to.equal(expected)
+          delete driver.working
+          done()
+        }
+      )
     })
 
     it('should yield childProcess.exec errors to the callback', (done) => {
       var error = new Error('Some error')
-      childProcess.exec.yieldsAsync(error)
+      childProcess.execFile.yieldsAsync(error)
       driver.exec('whatever', (err) => {
         expect(err).to.equal(error)
         done()
@@ -424,7 +434,9 @@ describe('fs-driver', () => {
     it('should check for commands using driver.exec', (done) => {
       driver.hasCommand('foo', () => {
         expect(driver.exec.calledOnce).to.be.true()
-        expect(driver.exec.calledWith('command -v foo')).to.be.true()
+        expect(driver.exec.firstCall.args.slice(0, 2)).to.deep.equal([
+          'which', ['foo']
+        ])
         done()
       })
     })
@@ -442,19 +454,21 @@ describe('fs-driver', () => {
     })
 
     it('should use driver.exec to perform file moves', (done) => {
-      var command = 'mv \'/tmp/foo\' \'/tmp/bar\''
       driver.move('foo', 'bar', () => {
         expect(driver.exec.calledOnce).to.be.true()
-        expect(driver.exec.calledWith(command)).to.be.true()
+        expect(driver.exec.firstCall.args.slice(0, 2)).to.deep.equal([
+          'mv', ['/tmp/foo', '/tmp/bar']
+        ])
         done()
       })
     })
 
     it('should use driver.exec to perform file copies', (done) => {
-      var command = 'cp \'/tmp/foo\' \'/tmp/bar\''
       driver.copy('foo', 'bar', () => {
         expect(driver.exec.calledOnce).to.be.true()
-        expect(driver.exec.calledWith(command)).to.be.true()
+        expect(driver.exec.firstCall.args.slice(0, 2)).to.deep.equal([
+          'cp', ['/tmp/foo', '/tmp/bar']
+        ])
         done()
       })
     })
@@ -483,11 +497,15 @@ describe('fs-driver', () => {
     describe('diff', () => {
       it('should use driver.exec to perform the diff', (done) => {
         driver.exec.yieldsAsync(null, 'diff', 'command')
-        var command = 'diff -u -r \'/tmp/a\' \'/tmp/b\''
-        driver.diff('/tmp/a', '/tmp/b', (err) => {
+        const a = '/file/a'
+        const b = '/file/b'
+
+        driver.diff(a, b, (err) => {
           expect(err).to.not.exist()
           expect(driver.exec.calledOnce).to.be.true()
-          expect(driver.exec.calledWith(command)).to.be.true()
+          expect(driver.exec.firstCall.args.slice(0, 2)).to.deep.equal([
+            'diff', ['-u', '-r', a, b]
+          ])
           done()
         })
       })

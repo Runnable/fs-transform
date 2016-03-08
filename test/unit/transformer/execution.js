@@ -11,7 +11,7 @@ var expect = Code.expect
 var sinon = require('sinon')
 var noop = require('101/noop')
 
-var Transformer = require('../../lib/transformer')
+var Transformer = require('../../../lib/transformer')
 
 describe('Transformer', () => {
   describe('transform', () => {

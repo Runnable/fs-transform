@@ -8,7 +8,7 @@ var beforeEach = lab.beforeEach
 var expect = require('code').expect
 var sinon = require('sinon')
 
-var Transformer = require('../../lib/transformer')
+var Transformer = require('../../../lib/transformer')
 
 describe('Transformer', () => {
   describe('exclude', () => {
