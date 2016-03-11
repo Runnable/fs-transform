@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "lint": "standard",
-    "test": "npm run lint && npm run test-all",
-    "test-all": "lab -v -c -a code",
-    "functional": "lab -v -c -a code test/functional.js",
+    "unit": "lab -v -c -a code test/unit",
+    "functional": "lab -v -c -a code test/functional",
+    "test": "npm run lint &&  lab -v -c -a code test/",
     "doc": "jsdoc -d doc index.js lib/"
   },
   "jshintConfig": {

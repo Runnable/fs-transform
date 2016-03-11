@@ -6,8 +6,8 @@ var describe = lab.describe
 var it = lab.it
 var Code = require('code')
 var expect = Code.expect
-var Transformer = require('../../lib/transformer')
-var ScriptGenerator = require('../../lib/script-generator')
+var Transformer = require('../../../lib/transformer')
+var ScriptGenerator = require('../../../lib/script-generator')
 
 describe('Transformer', () => {
   describe('constructor', () => {
