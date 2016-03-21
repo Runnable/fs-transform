@@ -21,7 +21,7 @@ describe('fs-driver', () => {
     })
 
     it('should escape single quotes', (done) => {
-      expect(FsDriver.escape('\'')).to.equal('\\\'')
+      expect(FsDriver.escape('\'')).to.equal('\'"\'"\'')
       done()
     })
 
