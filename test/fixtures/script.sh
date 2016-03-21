@@ -78,7 +78,7 @@ function copy {
 function replace {
   local git_pattern='.git/'
   log "Rule $rule_count: Replacing instances of '$1' with '$2'"
-  for name in $(eval "grep -rlI '$1' .")
+  for name in $(grep -rlI "$1" .)
   do
     # Always exclude .git/ files
     if [[ $name =~ $git_pattern ]]; then continue; fi
